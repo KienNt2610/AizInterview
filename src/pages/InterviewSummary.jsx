@@ -227,6 +227,18 @@ const InterviewSummary = () => {
     return null;
   };
 
+  const getScoreColor = (score) => {
+    if (score >= 80) return "text-green-400";
+    if (score >= 60) return "text-yellow-400";
+    return "text-red-400";
+  };
+
+  const getScoreBadgeColor = (score) => {
+    if (score >= 80) return "bg-green-500/20 border-green-500/30 text-green-400";
+    if (score >= 60) return "bg-yellow-500/20 border-yellow-500/30 text-yellow-400";
+    return "bg-red-500/20 border-red-500/30 text-red-400";
+  };
+
   if (loading && !retrying) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -343,8 +355,19 @@ const InterviewSummary = () => {
         </p>
       </div>
 
-      {/* Pass/Fail Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Average Score & Pass/Fail Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Average Score Card */}
+        <Card className="bg-gradient-to-br from-indigo-600/20 to-indigo-500/10 border-2 border-indigo-500/30">
+          <CardContent className="p-6 text-center">
+            <div className="text-sm text-[#66FCF1] mb-2 font-medium">Average Score</div>
+            <div className="text-5xl font-bold text-white mb-1">
+              {summary.overallScore ?? 0}
+            </div>
+            <div className="text-xs text-white/70 mt-1">out of 100</div>
+          </CardContent>
+        </Card>
+
         <Card className="bg-green-50 border-2 border-green-100">
           <CardContent className="p-6 text-center">
             <div className="text-sm text-green-600 mb-2">Passed</div>
@@ -441,6 +464,12 @@ const InterviewSummary = () => {
                         {result.category || "Interview"}
                       </span>
                       {getResultBadge(result.result)}
+                      {result.score !== null && result.score !== undefined && (
+                        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border ${getScoreBadgeColor(result.score)}`}>
+                          <Award className="w-3 h-3" />
+                          {typeof result.score === "number" ? result.score : parseFloat(result.score) || 0}/100
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>

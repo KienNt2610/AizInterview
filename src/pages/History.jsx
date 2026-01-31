@@ -5,6 +5,7 @@ import {
   Calendar,
   BarChart3,
   ArrowRight,
+  Award,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/Card";
 import Button from "../components/ui/Button";
@@ -52,6 +53,26 @@ const History = () => {
     } catch {
       return String(raw);
     }
+  };
+
+  const getOverallScore = (item) => {
+    // Try to get overallScore from various possible fields
+    const score = 
+      item.overallScore ?? 
+      item.averageScore ?? 
+      item.avgScore ?? 
+      item.totalScore ?? 
+      item.score ?? 
+      null;
+    
+    // Return score if valid, otherwise return null (don't display)
+    if (score !== null && score !== undefined) {
+      const scoreNum = typeof score === "number" ? score : parseFloat(score);
+      if (!Number.isNaN(scoreNum) && scoreNum >= 0 && scoreNum <= 100) {
+        return Math.round(scoreNum);
+      }
+    }
+    return null;
   };
 
 
@@ -110,6 +131,14 @@ const History = () => {
                             <Calendar className="w-4 h-4 text-[#66FCF1]" />
                             {getDate(item)}
                           </span>
+                          {getOverallScore(item) !== null && (
+                            <span className="flex items-center gap-2 px-3 py-1 bg-indigo-500/20 border border-indigo-500/30 rounded-lg">
+                              <Award className="w-4 h-4 text-[#66FCF1]" />
+                              <span className="text-white font-medium">
+                                Score: {getOverallScore(item)}
+                              </span>
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>

@@ -11,6 +11,7 @@ import InterviewSession from './pages/InterviewSession';
 import InterviewSummary from './pages/InterviewSummary';
 import History from './pages/History';
 import Payment from './pages/Payment';
+import PaymentPage from './pages/PaymentPage';
 import Settings from './pages/Settings';
 
 // Protected Route component
@@ -69,6 +70,18 @@ function App() {
             <Route path="history" element={<History />} />
             <Route path="payment" element={<Payment />} />
             <Route path="settings" element={<Settings />} />
+          </Route>
+
+          {/* Standalone Protected Route for Sepay Payment */}
+          <Route
+            path="/payment"
+            element={
+              <ProtectedRoute>
+                <MainLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<PaymentPage />} />
           </Route>
 
           {/* 404 - Redirect to homepage */}
