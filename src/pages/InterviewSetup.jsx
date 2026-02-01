@@ -19,6 +19,7 @@ import Button from "../components/ui/Button";
 import { useToast } from "../components/ui/Toast";
 import { jobAPI, interviewSessionAPI, aiInterviewAPI } from "../services/api";
 import { useUsageLimit } from "../hooks/useUsageLimit";
+import { extractAudioBase64 } from "../utils/aiAudio";
 import { unlockTTS } from "../utils/tts";
 
 const InterviewSetup = () => {
@@ -117,7 +118,7 @@ const InterviewSetup = () => {
       return;
     }
 
-    // Unlock TTS via user gesture (required for autoplay restrictions)
+    // Unlock TTS via user gesture (for fallback when AI audio not available)
     unlockTTS();
 
     setLoading(true);
@@ -197,6 +198,14 @@ const InterviewSetup = () => {
         console.log("display_text:", displayText);
         console.log("turnIndex:", turnIndex);
 
+        // Extract audio_base64 from AI response (flexible location)
+        const audioBase64 = extractAudioBase64(aiPayload) || extractAudioBase64({ question: aiPayload?.question });
+        if (audioBase64) {
+          console.log("[AI VOICE] Found audio_base64 for first question");
+        } else {
+          console.log("[AI VOICE] no audio_base64, fallback");
+        }
+
         // Note: TTS will be handled in InterviewSession after hydration (not here to avoid cancel on navigate)
 
         // Save interview context to localStorage with AI state
@@ -215,6 +224,8 @@ const InterviewSetup = () => {
           mode: mode,
           // First question display text
           currentQuestionText: displayText,
+          // First question audio (if available)
+          currentQuestionAudioBase64: audioBase64 || null,
         };
 
         localStorage.setItem("interviewContext", JSON.stringify(interviewContext));

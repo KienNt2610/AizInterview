@@ -32,10 +32,38 @@ import AiTranscriptCenter from '../components/interview/AiTranscriptCenter';
 import FullScreenLoading from '../components/interview/FullScreenLoading';
 import ReplayControls from '../components/interview/ReplayControls';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
+import { extractAudioBase64, playAudioBase64, stopAudioBase64 } from '../utils/aiAudio';
 import { speakTextVi, cancelSpeak, unlockTTS } from '../utils/tts';
 
 // Maximum number of questions per interview
-const MAX_QUESTIONS = 10;
+const MAX_QUESTIONS = 12;
+
+// Transition responses for simplified evaluation display
+const PASS_RESPONSES = [
+  "Ổn rồi, mình sang câu tiếp theo nhé.",
+  "Tốt lắm, tiếp tục nào.",
+  "Ok, câu này ổn, sang câu khác.",
+  "Anh ghi nhận, mình đi tiếp nhé.",
+  "Câu trả lời ổn, tiếp theo.",
+  "Được rồi, sang câu tiếp.",
+  "Tạm ổn, mình tiếp tục.",
+  "Ok, câu sau nhé.",
+  "Anh hiểu rồi, sang câu tiếp.",
+  "Ổn áp, mình đi tiếp.",
+];
+
+const FAIL_RESPONSES = [
+  "Chưa ổn lắm, mình thử câu khác nhé.",
+  "Không sao, sang câu tiếp.",
+  "Câu này chưa đúng, mình tiếp tục.",
+  "Ổn thôi, mình đi tiếp.",
+  "Không vấn đề, sang câu sau.",
+  "Chưa chính xác, thử câu khác.",
+  "Ok, bỏ qua câu này nhé.",
+  "Mình sang câu tiếp theo.",
+  "Chưa đạt, tiếp tục.",
+  "Không sao, câu tiếp nhé.",
+];
 
 const InterviewSession = () => {
   const { interviewId: sessionId } = useParams();
@@ -62,6 +90,9 @@ const InterviewSession = () => {
   
   // Evaluation state (shown before next question)
   const [evaluation, setEvaluation] = useState(null);
+  
+  // Transition message state (short PASS/FAIL response)
+  const [transitionMessage, setTransitionMessage] = useState(null);
   
   // Runtime evaluations array - stores all evaluations for summary page
   const [runtimeEvaluations, setRuntimeEvaluations] = useState([]); 
@@ -96,6 +127,10 @@ const InterviewSession = () => {
   // AI Speech state
   const [aiSpeechState, setAiSpeechState] = useState('idle'); 
   const [feedbackText, setFeedbackText] = useState('');
+  // AI Audio state (base64 strings)
+  const currentQuestionAudioRef = useRef(null); // Store audio_base64 for current question
+  const pendingFeedbackAudioRef = useRef(null); // Store audio_base64 for pending feedback
+  const feedbackAudioPromiseRef = useRef(null); // Track feedback audio playback promise
   
   // Processing state
   const [isAnswerProcessing, setIsAnswerProcessing] = useState(false);
@@ -151,8 +186,20 @@ const InterviewSession = () => {
     resetTranscript: resetFeedbackTranscript,
   } = useAiTranscriptStreaming({});
   
+  // Helper: Get transition response based on PASS/FAIL
+  const getTransitionResponse = (result) => {
+    if (result === 'PASS' || result === 'Pass') {
+      return PASS_RESPONSES[Math.floor(Math.random() * PASS_RESPONSES.length)];
+    } else {
+      return FAIL_RESPONSES[Math.floor(Math.random() * FAIL_RESPONSES.length)];
+    }
+  };
+
   const getDisplayTranscript = () => {
-    if (phase === 'showing_feedback') {
+    if (phase === 'showing_transition') {
+      // Show transition message (short PASS/FAIL response)
+      return transitionMessage || '';
+    } else if (phase === 'showing_feedback') {
       if (evaluation?.feedback) {
         return evaluation.feedback;
       } else if (feedbackLiveTranscript || feedbackFinalTranscript) {
@@ -226,7 +273,7 @@ const InterviewSession = () => {
   };
 
   const displayTranscript = getDisplayTranscript();
-  const isStreaming = phase === 'showing_feedback' ? false : isAiStreaming;
+  const isStreaming = isAiStreaming;
 
   const hydrateFromLocalStorage = () => {
     if (hasHydratedRef.current) {
@@ -255,7 +302,14 @@ const InterviewSession = () => {
         currentDifficulty: rawContext.current_difficulty || rawContext.currentDifficulty || 'intermediate',
         askedIds: rawContext.asked_ids || rawContext.askedIds || [],
         turnIndex: rawContext.turnIndex || rawContext.turn_index || 1,
+        currentQuestionAudioBase64: rawContext.currentQuestionAudioBase64 || null,
       };
+      
+      // Store audio for first question
+      if (normalizedContext.currentQuestionAudioBase64) {
+        currentQuestionAudioRef.current = normalizedContext.currentQuestionAudioBase64;
+        console.log("[AI VOICE] Stored audio for first question from localStorage");
+      }
       
       console.log("=== HYDRATION: Normalized context ===", normalizedContext);
       
@@ -269,7 +323,7 @@ const InterviewSession = () => {
       const askedIds = Array.isArray(normalizedContext.askedIds) ? normalizedContext.askedIds : [];
       const turnIndex = normalizedContext.turnIndex >= 1 ? normalizedContext.turnIndex : 1;
       
-      // Unlock TTS via user gesture (if not already unlocked)
+      // Unlock TTS via user gesture (for fallback when AI audio not available)
       unlockTTS();
       
       // Validate question data
@@ -312,6 +366,7 @@ const InterviewSession = () => {
   }, []); 
 
   const simulateAiQuestion = (questionText) => {
+    
     // Verify questionText matches currentQuestion.text (guard against stale state)
     const currentQuestionText = turnState.currentQuestion?.text || '';
     if (questionText !== currentQuestionText) {
@@ -337,12 +392,84 @@ const InterviewSession = () => {
     // Start streaming animation (visual effect only)
     startStreaming(questionText);
     
-    const estimatedDuration = Math.min(questionText.length * 50, 5000); 
-    
-    setTimeout(() => {
-      stopStreaming();
-      setAiSpeechState('done');
-    }, estimatedDuration);
+    // Try to play AI audio if available, fallback to TTS
+    const audioBase64 = currentQuestionAudioRef.current;
+    if (audioBase64) {
+      console.log("[AI VOICE] Playing audio for question");
+      playAudioBase64(audioBase64, {
+        onStart: () => {
+          console.log("[AI VOICE] Question audio started");
+        },
+        onEnd: () => {
+          console.log("[AI VOICE] Question audio ended");
+          stopStreaming();
+          setAiSpeechState('done');
+          // Arm 5-second auto-submit timer after AI finishes speaking
+          armAutoSubmitTimer();
+        },
+        onError: (error) => {
+          console.error("[AI VOICE] Question audio error, falling back to TTS:", error);
+          // Fallback to TTS
+          speakTextVi(questionText, {
+            onStart: () => {
+              console.log('[TTS] Question speech started (fallback)');
+            },
+            onEnd: () => {
+              console.log('[TTS] Question speech ended (fallback)');
+              stopStreaming();
+              setAiSpeechState('done');
+              armAutoSubmitTimer();
+            },
+            onError: (event) => {
+              console.error('[TTS] Question speech error (fallback):', event);
+              stopStreaming();
+              setAiSpeechState('done');
+              armAutoSubmitTimer();
+            },
+          });
+        },
+      }).catch((error) => {
+        console.error("[AI VOICE] Question audio play failed, falling back to TTS:", error);
+        // Fallback to TTS
+        speakTextVi(questionText, {
+          onStart: () => {
+            console.log('[TTS] Question speech started (fallback)');
+          },
+          onEnd: () => {
+            console.log('[TTS] Question speech ended (fallback)');
+            stopStreaming();
+            setAiSpeechState('done');
+            armAutoSubmitTimer();
+          },
+          onError: (event) => {
+            console.error('[TTS] Question speech error (fallback):', event);
+            stopStreaming();
+            setAiSpeechState('done');
+            armAutoSubmitTimer();
+          },
+        });
+      });
+    } else {
+      console.log("[AI VOICE] no audio_base64, fallback to TTS");
+      // No AI audio, use TTS as fallback
+      speakTextVi(questionText, {
+        onStart: () => {
+          console.log('[TTS] Question speech started (no AI audio)');
+        },
+        onEnd: () => {
+          console.log('[TTS] Question speech ended (no AI audio)');
+          stopStreaming();
+          setAiSpeechState('done');
+          armAutoSubmitTimer();
+        },
+        onError: (event) => {
+          console.error('[TTS] Question speech error (no AI audio):', event);
+          stopStreaming();
+          setAiSpeechState('done');
+          armAutoSubmitTimer();
+        },
+      });
+    }
   };
 
   // Simulate AI feedback (mock TTS + transcript)
@@ -379,6 +506,8 @@ const InterviewSession = () => {
       if (autoSubmitTimerRef.current) {
         clearTimeout(autoSubmitTimerRef.current);
       }
+      // Cleanup audio on unmount (AI voice only)
+      stopAudioBase64();
     };
   }, []);
   
@@ -408,57 +537,14 @@ const InterviewSession = () => {
     }
   }, [turnState.currentQuestion?.id, turnState.currentQuestion?.text, phase, isInitialized]);
 
-  // TTS: Speak question when currentQuestion.text changes
-  useEffect(() => {
-    if (
-      isInitialized &&
-      phase === 'asking' &&
-      turnState.currentQuestion?.text &&
-      turnState.currentQuestion.text.trim().length > 0
-    ) {
-      const questionText = turnState.currentQuestion.text;
-      console.log('[TTS] Speaking question:', questionText.substring(0, 50) + '...');
-      speakTextVi(questionText, {
-        onStart: () => {
-          console.log('[TTS] Question speech started');
-        },
-        onEnd: () => {
-          console.log('[TTS] Question speech ended');
-        },
-        onError: (event) => {
-          console.error('[TTS] Question speech error:', event);
-        },
-      });
-    }
-  }, [turnState.currentQuestion?.text, phase, isInitialized]);
+  // AI voice is handled via audio_base64 in simulateAiQuestion and handleSubmitAnswer
+  // No TTS useEffect needed - all voice is from AI audio_base64
 
-  // TTS: Speak feedback when evaluation.feedback is set
-  useEffect(() => {
-    if (
-      phase === 'showing_feedback' &&
-      evaluation?.feedback &&
-      evaluation.feedback.trim().length > 0
-    ) {
-      const feedbackText = evaluation.feedback;
-      console.log('[TTS] Speaking feedback:', feedbackText.substring(0, 50) + '...');
-      speakTextVi(feedbackText, {
-        onStart: () => {
-          console.log('[TTS] Feedback speech started');
-        },
-        onEnd: () => {
-          console.log('[TTS] Feedback speech ended');
-        },
-        onError: (event) => {
-          console.error('[TTS] Feedback speech error:', event);
-        },
-      });
-    }
-  }, [evaluation?.feedback, phase]);
-
-  // TTS: Cleanup on unmount
+  // Audio & TTS: Cleanup on unmount
   useEffect(() => {
     return () => {
       cancelSpeak();
+      stopAudioBase64();
     };
   }, []);
 
@@ -529,6 +615,11 @@ const InterviewSession = () => {
       if (phase !== 'asking' && questionTimerRef.current) {
         clearInterval(questionTimerRef.current);
         questionTimerRef.current = null;
+      }
+      // Cleanup audio when leaving asking phase, but NOT during showing_feedback
+      // (feedback audio needs to play during showing_feedback phase)
+      if (phase !== 'asking' && phase !== 'showing_feedback') {
+        stopAudioBase64();
       }
     };
   }, [phase, turnState.currentQuestion?.id]);
@@ -1186,9 +1277,11 @@ const InterviewSession = () => {
       }
       
       // CRITICAL: Check if we've reached MAX_QUESTIONS before calling AI submit
+      // Allow AI submit for the last question (turnIndex = MAX_QUESTIONS) so user gets evaluation
+      // Interview will end after AI response
       const turnIndexForCheck = stateSnapshot.turnIndex;
-      if (turnIndexForCheck >= MAX_QUESTIONS) {
-        console.log("=== MAX QUESTIONS REACHED - ENDING INTERVIEW ===");
+      if (turnIndexForCheck > MAX_QUESTIONS) {
+        console.log("=== MAX QUESTIONS EXCEEDED - ENDING INTERVIEW ===");
         console.log("Current turnIndex:", turnIndexForCheck);
         console.log("MAX_QUESTIONS:", MAX_QUESTIONS);
         console.log("Skipping AI submit and ending interview");
@@ -1329,6 +1422,7 @@ const InterviewSession = () => {
         throw aiError;
       }
       
+      // Process AI response (inside outer try block)
       console.log("AI submit response:", aiRes.data);
       const aiPayload = aiRes.data?.data ?? aiRes.data;
       
@@ -1343,6 +1437,42 @@ const InterviewSession = () => {
       console.log("topic_changed:", aiPayload?.topic_changed);
       console.log("is_end_of_interview:", aiPayload?.is_end_of_interview);
       
+      // Extract audio_base64 for feedback (priority: evaluation object, then root)
+      const feedbackAudioBase64 = extractAudioBase64({ evaluation: aiPayload?.evaluation }) ||
+                                   (aiPayload?.audio_base64 ? aiPayload.audio_base64 : null);
+      if (feedbackAudioBase64) {
+        pendingFeedbackAudioRef.current = feedbackAudioBase64;
+        console.log("[AI VOICE] Found audio_base64 for feedback");
+      } else {
+        pendingFeedbackAudioRef.current = null;
+        console.log("[AI VOICE] no audio_base64 for feedback, fallback");
+      }
+      
+      // Extract audio_base64 for next question
+      // Priority: next_question object, then root audio_base64
+      // Note: Root audio_base64 might be for next question (backend returns it at root level)
+      let nextQuestionAudioBase64 = extractAudioBase64({ next_question: aiPayload?.next_question }) ||
+                                    extractAudioBase64({ question: aiPayload?.next_question });
+      
+      // If not found in next_question, check root audio_base64
+      // Root audio_base64 could be for next question (if evaluation has its own audio, or if backend returns it at root)
+      if (!nextQuestionAudioBase64 && aiPayload?.audio_base64) {
+        // If evaluation has its own audio_base64, root audio_base64 is likely for next question
+        if (aiPayload?.evaluation?.audio_base64) {
+          nextQuestionAudioBase64 = aiPayload.audio_base64;
+        } else {
+          // Even if evaluation doesn't have audio, root audio_base64 might still be for next question
+          // (backend might return root audio for next question)
+          // Use root audio_base64 for next question
+          nextQuestionAudioBase64 = aiPayload.audio_base64;
+        }
+      }
+      
+      if (nextQuestionAudioBase64) {
+        console.log("[AI VOICE] Found audio_base64 for next question");
+      } else {
+        console.log("[AI VOICE] no audio_base64 for next question, fallback");
+      }
       // Extract evaluation from response (per AI Interviewer API doc)
       const evaluationData = {
         result: aiPayload?.evaluation?.result ?? null,
@@ -1358,27 +1488,72 @@ const InterviewSession = () => {
         next_difficulty: aiPayload?.next_difficulty ?? aiPayload?.next_question?.difficulty ?? null,
         topic_changed: aiPayload?.topic_changed ?? false,
         is_end_of_interview: aiPayload?.is_end_of_interview ?? false,
+        nextQuestionAudioBase64: nextQuestionAudioBase64 || null, // Store audio for next question
       };
       
-      // Pipeline Step 7: Append evaluation message to chat (must show feedback first) (C.7)
-      // CRITICAL FLOW: After AI submit succeeds:
-      // 1. Show evaluation feedback immediately (setEvaluation) - C.7
-      // 2. Store next question in pendingNext (DO NOT update currentQuestion here) - C.8
-      // 3. User must click "Next" to commit pendingNext -> currentQuestion
-      // This prevents state conflicts and ensures correct flow: Question -> Answer -> Feedback -> Next Question
+      // NEW FLOW: Show short transition response based on PASS/FAIL
+      // 1. Read evaluation.result (PASS / FAIL)
+      // 2. Generate transition text (ignore evaluation.feedback)
+      // 3. Display transition text
+      // 4. Play voice for transition text (TTS - ignore feedback audio_base64)
+      // 5. Auto-advance to next question after voice ends
+      
+      console.log("[INTERVIEW] Evaluation result:", evaluationData.result);
+      
+      // Generate transition message based on result
+      const transitionText = getTransitionResponse(evaluationData.result);
+      console.log("[INTERVIEW] Transition message selected:", transitionText);
+      
+      // Store evaluation for summary (but don't display detailed feedback)
       setEvaluation(evaluationData);
       setPendingNext(pendingNextData);
-      setPhase('showing_feedback'); // User must click "Next" to proceed
+      setTransitionMessage(transitionText);
+      setPhase('showing_transition'); // Show transition, then auto-advance
+      
+      // Check if interview should end
+      // End interview if: AI signals end, no next question, or we've reached MAX_QUESTIONS (after answering question 12)
+      const currentTurnIndex = stateSnapshot.turnIndex;
+      if (pendingNextData.is_end_of_interview || !pendingNextData.next_question || currentTurnIndex >= MAX_QUESTIONS) {
+        // End interview - navigate to summary
+        console.log("[INTERVIEW] Ending interview - turnIndex:", currentTurnIndex, "MAX_QUESTIONS:", MAX_QUESTIONS);
+        setIsEndOfInterview(true);
+        stopAudioBase64();
+        navigate(`/interview/${sessionId}/summary`);
+        return;
+      }
+      
+      // Play transition text voice (TTS only - ignore feedback audio_base64)
+      setTimeout(() => {
+        speakTextVi(transitionText, {
+          onStart: () => {
+            console.log("[TTS] Speaking transition:", transitionText);
+            setAiSpeechState('speaking');
+          },
+          onEnd: () => {
+            console.log("[TTS] Transition speech ended");
+            console.log("[INTERVIEW] Moving to next question");
+            setAiSpeechState('done');
+            // Auto-advance to next question after transition voice ends
+            commitNextQuestion(pendingNextData);
+          },
+          onError: () => {
+            // If TTS fails, still advance
+            console.log("[INTERVIEW] Transition TTS error, moving to next question");
+            setAiSpeechState('done');
+            commitNextQuestion(pendingNextData);
+          },
+        });
+      }, 300);
       
       // IMPORTANT: DO NOT update currentQuestion state here (C.8)
       // turnState.currentQuestion remains unchanged
       // It will be updated ONLY when user clicks "Next" (in handleNext) - C.9, C.10
       
       // Store evaluation in runtime array for summary page
-      const currentTurnIndex = stateSnapshot.turnIndex;
+      // Use the same currentTurnIndex from above check (line 1515)
       const currentQuestion = stateSnapshot.currentQuestion;
       const newEvaluation = {
-        turnIndex: currentTurnIndex,
+        turnIndex: stateSnapshot.turnIndex, // Use turnIndex from stateSnapshot
         questionId: currentQuestion?.id || null,
         questionText: currentQuestion?.text || '',
         userAnswer: finalTranscriptText,
@@ -1404,36 +1579,6 @@ const InterviewSession = () => {
         }
         return updated;
       });
-      
-      // Check if interview should end
-      const shouldEndInterview = currentTurnIndex >= MAX_QUESTIONS || pendingNextData.is_end_of_interview;
-      if (shouldEndInterview) {
-        // Cancel any ongoing TTS before ending interview
-        cancelSpeak();
-        // Navigate to summary page
-        setTimeout(() => {
-          navigate(`/interview/${sessionId}/summary`);
-        }, 100);
-        return; // Don't proceed with save-evaluation
-      }
-      
-      // Reset loading states immediately (UI should show feedback, not loading)
-      setIsAnswerProcessing(false);
-      setIsSubmitting(false);
-      submitLockRef.current = false; // Release submit lock
-      
-      // DISABLED: Save EVALUATION to DB (endpoint has schema issues)
-      // Evaluation data is stored in runtimeEvaluations and localStorage for summary page
-      // This can be re-enabled when backend schema is fixed
-      // if (evaluationData.result !== null || evaluationData.feedback) {
-      //   // Fire-and-forget: don't await, don't block UI
-      //   interviewEvaluationAPI.saveEvaluation(saveEvaluationPayload).catch(err => {
-      //     console.warn('Save evaluation failed (non-critical):', err);
-      //   });
-      // }
-
-      // Success toast (UI already updated above)
-      toast('Câu trả lời đã được gửi thành công!', { type: 'success' });
     } catch (error) {
       console.error('Failed to submit answer:', error);
       
@@ -1472,71 +1617,71 @@ const InterviewSession = () => {
     }
   };
 
-  // Handle "Next question" button click (per AI Interviewer API doc)
-  // CRITICAL: This is the ONLY place where pendingNext is committed to currentQuestion state (C.9, C.10, C.11)
-  const handleNext = () => {
-    clearAutoSubmitTimer('next_question');
-
-    // Clear auto-next timeout if user manually clicks "Next"
-    if (autoNextTimeoutRef.current) {
-      clearTimeout(autoNextTimeoutRef.current);
-      autoNextTimeoutRef.current = null;
-    }
-
-    if (!pendingNext) {
-      console.error("handleNext called but pendingNext is null");
-      return;
+  // Helper function to commit next question (extracted for reuse in auto-advance flow)
+  const commitNextQuestion = (pendingNextData) => {
+    if (!pendingNextData) {
+      console.error("commitNextQuestion called but pendingNextData is null");
+      return false;
     }
     
     // Check if we've reached MAX_QUESTIONS
     const nextTurnIndex = turnState.turnIndex + 1;
     if (nextTurnIndex > MAX_QUESTIONS) {
-      // Cancel any ongoing TTS before ending interview
-      cancelSpeak();
+      // Cancel any ongoing audio before ending interview
+      stopAudioBase64();
       // Navigate to summary page
       navigate(`/interview/${sessionId}/summary`);
-      return;
+      return false;
     }
     
     // Check if interview is ended
-    if (pendingNext.is_end_of_interview || !pendingNext.next_question) {
+    if (pendingNextData.is_end_of_interview || !pendingNextData.next_question) {
       setIsEndOfInterview(true);
-      // Cancel any ongoing TTS before ending interview
-      cancelSpeak();
+      // Cancel any ongoing audio before ending interview
+      stopAudioBase64();
       // Navigate to summary page
       navigate(`/interview/${sessionId}/summary`);
-      return;
+      return false;
     }
     
     // Extract next question data from pendingNext
-    const nextQuestionId = pendingNext.next_question?.id ?? null;
-    const nextDisplayText = pendingNext.display_text || pendingNext.next_question?.text || '';
-    const nextTopic = pendingNext.new_topic ?? pendingNext.next_question?.topic ?? turnState.currentQuestion?.topic ?? null;
-    const nextDifficulty = pendingNext.next_difficulty ?? pendingNext.next_question?.difficulty ?? turnState.currentQuestion?.difficulty ?? 'intermediate';
+    const nextQuestionId = pendingNextData.next_question?.id ?? null;
+    const nextDisplayText = pendingNextData.display_text || pendingNextData.next_question?.text || '';
+    const nextTopic = pendingNextData.new_topic ?? pendingNextData.next_question?.topic ?? turnState.currentQuestion?.topic ?? null;
+    const nextDifficulty = pendingNextData.next_difficulty ?? pendingNextData.next_question?.difficulty ?? turnState.currentQuestion?.difficulty ?? 'intermediate';
+    
+    // Extract audio for next question (if available)
+    const nextQuestionAudioBase64 = pendingNextData.nextQuestionAudioBase64 || 
+                                    extractAudioBase64({ next_question: pendingNextData.next_question }) ||
+                                    extractAudioBase64({ question: pendingNextData.next_question });
+    
+    // Store audio for next question
+    if (nextQuestionAudioBase64) {
+      currentQuestionAudioRef.current = nextQuestionAudioBase64;
+      console.log("[AI VOICE] Stored audio for next question");
+    } else {
+      currentQuestionAudioRef.current = null;
+      console.log("[AI VOICE] no audio_base64 for next question, fallback");
+    }
     
     // Guard: Ensure nextQuestionId exists
     if (!nextQuestionId || (typeof nextQuestionId === 'string' && nextQuestionId.trim() === '')) {
-      console.error("=== HANDLE NEXT ERROR: nextQuestionId is missing ===");
-      console.error("pendingNext:", pendingNext);
+      console.error("=== COMMIT NEXT QUESTION ERROR: nextQuestionId is missing ===");
+      console.error("pendingNextData:", pendingNextData);
       toast('Không tìm thấy câu hỏi tiếp theo. Vui lòng thử lại.', { type: 'error' });
-      return;
+      return false;
     }
     
-    // Guard: Prevent duplicate question (Task 5)
+    // Guard: Prevent duplicate question
     const nextQIdStr = String(nextQuestionId);
     if (turnState.askedIds.includes(nextQIdStr)) {
-      console.warn("=== HANDLE NEXT WARNING: next_question.id already in askedIds ===");
+      console.warn("=== COMMIT NEXT QUESTION WARNING: next_question.id already in askedIds ===");
       console.warn("nextQuestionId:", nextQIdStr);
       console.warn("askedIds:", turnState.askedIds);
-      console.warn("This question has already been asked. Keeping pendingNext and requesting retry.");
-      toast('Câu hỏi này đã được hỏi trước đó. Vui lòng thử lại.', { type: 'warning' });
-      // Keep pendingNext - user can retry or we can handle this case
-      // For now, we'll still commit but log the warning
-      // TODO: Consider not committing and showing error to user
+      // Still proceed but log warning
     }
     
-    // Pipeline Step 9-10-11: Commit next question using commitQuestion (atomic update)
-    // commitQuestion ensures askedIds includes nextQuestionId
+    // Commit next question using commitQuestion (atomic update)
     commitQuestion({
       id: nextQuestionId,
       text: nextDisplayText,
@@ -1561,8 +1706,17 @@ const InterviewSession = () => {
     setTranscriptText('');
     setIsTranscribing(false);
     
-    // Cancel any ongoing TTS before moving to next question
+    // CRITICAL: Do NOT stop feedback audio here - it should have finished already
+    // Cancel any ongoing audio and TTS before moving to next question
     cancelSpeak();
+    stopAudioBase64();
+    
+    // Clear feedback audio refs
+    pendingFeedbackAudioRef.current = null;
+    feedbackAudioPromiseRef.current = null;
+    
+    // Clear transition message
+    setTransitionMessage(null);
     
     // Reset evaluation and pendingNext (ready for next submit)
     setEvaluation(null);
@@ -1574,16 +1728,55 @@ const InterviewSession = () => {
     // Clear error
     setError(null);
     
-    // NOTE: simulateAiQuestion will be called automatically by useEffect when currentQuestion changes
-    // No need to call it manually here - this prevents race conditions and stale state
-    
     console.log("=== MOVED TO NEXT QUESTION: State committed ===");
-    console.log("After commit:", {
-      currentQuestion: turnState.currentQuestion,
-      askedIds: turnState.askedIds,
-      turnIndex: turnState.turnIndex + 1,
-    });
-    console.log("=== NOTE: State is now managed by React only (no localStorage re-hydration) ===");
+    return true;
+  };
+
+  // Handle "Next question" button click (per AI Interviewer API doc)
+  // CRITICAL: This is the ONLY place where pendingNext is committed to currentQuestion state (C.9, C.10, C.11)
+  const handleNext = async () => {
+    clearAutoSubmitTimer('next_question');
+
+    // Clear auto-next timeout if user manually clicks "Next"
+    if (autoNextTimeoutRef.current) {
+      clearTimeout(autoNextTimeoutRef.current);
+      autoNextTimeoutRef.current = null;
+    }
+
+    if (!pendingNext) {
+      console.error("handleNext called but pendingNext is null");
+      return;
+    }
+    
+    // CRITICAL: Wait for feedback audio to finish playing before moving to next question
+    if (feedbackAudioPromiseRef.current) {
+      console.log("[AI VOICE] Waiting for feedback audio to finish...");
+      try {
+        await feedbackAudioPromiseRef.current;
+        console.log("[AI VOICE] Feedback audio finished, proceeding to next question");
+      } catch (error) {
+        console.error("[AI VOICE] Error waiting for feedback audio:", error);
+        // Continue anyway if there's an error
+      }
+      feedbackAudioPromiseRef.current = null;
+    } else if (aiSpeechState === 'speaking') {
+      // If no AI voice but TTS is speaking, wait for it to finish
+      // TTS doesn't have a promise, so we wait a reasonable duration
+      // Most feedback is short (5-10 seconds), so wait up to 15 seconds
+      console.log("[TTS] TTS is speaking, waiting up to 15 seconds...");
+      let waitCount = 0;
+      const maxWait = 150; // 15 seconds (150 * 100ms)
+      while (aiSpeechState === 'speaking' && waitCount < maxWait) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        waitCount++;
+      }
+      // After waiting, cancel any remaining TTS and proceed
+      cancelSpeak();
+      console.log("[TTS] Proceeding to next question");
+    }
+    
+    // Use helper function to commit next question
+    commitNextQuestion(pendingNext);
   };
   
   const handleNextQuestion = () => {
@@ -1651,6 +1844,9 @@ const InterviewSession = () => {
       
       await interviewSessionAPI.end(sessionIdStr);
 
+      // Cancel any ongoing audio before ending interview
+      stopAudioBase64();
+
       toast('Cuộc phỏng vấn đã hoàn thành!', { type: 'success' });
 
       // Navigate to summary page
@@ -1692,7 +1888,7 @@ const InterviewSession = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Auto-advance to next question 5s after feedback is shown
+  // Auto-advance to next question 15s after feedback is shown (optional, user can click Next earlier)
   useEffect(() => {
     // Only schedule auto-next when feedback is being shown and we have a pending next question
     if (phase === 'showing_feedback' && pendingNext) {
@@ -1984,8 +2180,8 @@ const InterviewSession = () => {
                <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0B0C10]/80 border border-[#66FCF1]/20">
                  <Clock className="w-4 h-4 text-[#66FCF1]" />
                  <span className="text-xs font-mono text-[#C5C6C7]">
-                   {phase === 'showing_feedback' ? 'Chờ câu hỏi tiếp theo...' : 'Còn '}
-                   {phase !== 'showing_feedback' && (
+                  {(phase === 'showing_feedback' || phase === 'showing_transition') ? 'Chờ câu hỏi tiếp theo...' : 'Còn '}
+                  {phase !== 'showing_feedback' && phase !== 'showing_transition' && (
                      <span className="text-[#66FCF1] ml-1">
                        {formatTime(questionTimeLeft)}
                      </span>
@@ -2021,9 +2217,9 @@ const InterviewSession = () => {
       <div className="flex-1 flex flex-col min-h-0">
         <AiTranscriptCenter
           transcript={displayTranscript}
-          speechState={phase === 'showing_feedback' ? 'done' : aiSpeechState}
-          isStreaming={phase === 'showing_feedback' ? false : isStreaming}
-          mode={phase === 'showing_feedback' ? 'feedback' : 'question'}
+          speechState={(phase === 'showing_feedback' || phase === 'showing_transition') ? 'done' : aiSpeechState}
+          isStreaming={(phase === 'showing_feedback' || phase === 'showing_transition') ? false : isStreaming}
+          mode={(phase === 'showing_feedback' || phase === 'showing_transition') ? 'feedback' : 'question'}
         />
 
         {/* Question countdown timer (1 minute per question) */}
@@ -2102,8 +2298,14 @@ const InterviewSession = () => {
 
             {/* Control Buttons */}
             <div className="flex items-center gap-3">
-              {phase === 'showing_feedback' ? (
-                // Show "Next question" button when showing feedback
+              {phase === 'showing_transition' ? (
+                // Show "Moving to next question..." during transition (auto-advancing)
+                <div className="flex items-center gap-2 text-[#C5C6C7]">
+                  <div className="w-5 h-5 border-2 border-[#66FCF1] border-t-transparent rounded-full animate-spin" />
+                  <span className="text-sm">Đang chuyển sang câu tiếp theo...</span>
+                </div>
+              ) : phase === 'showing_feedback' ? (
+                // Show "Next question" button when showing feedback (legacy)
                 <Button
                   variant="primary"
                   size="lg"
@@ -2154,7 +2356,7 @@ const InterviewSession = () => {
                     variant="outline"
                     size="lg"
                     onClick={clearRecording}
-                    disabled={isAnswerProcessing || isTranscribing || isSubmitting || phase === 'showing_feedback'}
+                    disabled={isAnswerProcessing || isTranscribing || isSubmitting || phase === 'showing_feedback' || phase === 'showing_transition'}
                     className="px-6 py-6 text-lg border-[#66FCF1]/30 text-[#66FCF1] hover:bg-[#66FCF1]/10"
                   >
                     Ghi lại
@@ -2169,7 +2371,8 @@ const InterviewSession = () => {
                       isTranscribing || 
                       isRecording || 
                       !recordedAudioBlob ||
-                      phase === 'showing_feedback'
+                      phase === 'showing_feedback' ||
+                      phase === 'showing_transition'
                     }
                     className="px-8 py-6 text-lg glow-primary-hover"
                   >

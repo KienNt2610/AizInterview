@@ -96,10 +96,18 @@ const aiApiInstance = axios.create({
 
 export const aiInterviewAPI = {
   // Start AI interview - get first question
-  start: (payload) => aiApiInstance.post("/api/start", payload),
+  start: (payload) => {
+    const finalPayload = payload ? { ...payload, use_voice_ai: true } : { use_voice_ai: true };
+    console.log('[AI VOICE] use_voice_ai enabled for /api/start');
+    return aiApiInstance.post("/api/start", finalPayload);
+  },
   
   // Submit user answer - get feedback and next question
-  submit: (payload) => aiApiInstance.post("/api/submit", payload),
+  submit: (payload) => {
+    const finalPayload = payload ? { ...payload, use_voice_ai: true } : { use_voice_ai: true };
+    console.log('[AI VOICE] use_voice_ai enabled for /api/submit');
+    return aiApiInstance.post("/api/submit", finalPayload);
+  },
 };
 
 /** ===== USER ===== */

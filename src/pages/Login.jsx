@@ -104,7 +104,7 @@ const Login = () => {
       window.dispatchEvent(new Event('auth-change'));
 
       toast('Login successful! Redirecting...', { type: 'success' });
-      navigate('/dashboard');
+      navigate('/');
     } catch (error) {
       // Nếu là lỗi tự throw "Missing access token..." thì show thân thiện
       const msg =
