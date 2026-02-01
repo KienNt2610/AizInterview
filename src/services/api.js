@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
+const API_BASE_URL = "https://aizz.io.vn";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -14,7 +14,7 @@ api.interceptors.request.use(
     if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 /** ===== AUTH ===== */
@@ -22,11 +22,14 @@ export const authAPI = {
   login: (payload) => api.post("/Auth/login", payload),
   register: (payload) => api.post("/Auth/register", payload),
 
-
   refresh: (refreshToken) => {
-    return api.post("/Auth/refresh", { refreshToken }, {
-      _skipAuthRetry: true, 
-    });
+    return api.post(
+      "/Auth/refresh",
+      { refreshToken },
+      {
+        _skipAuthRetry: true,
+      },
+    );
   },
 
   logout: () => {
@@ -68,10 +71,8 @@ export const interviewSessionAPI = {
   },
 
   history: () => api.get("/InterviewSesssion/history"),
-  detail: (sessionId) =>
-    api.get(`/InterviewSesssion/detail/${sessionId}`),
+  detail: (sessionId) => api.get(`/InterviewSesssion/detail/${sessionId}`),
 };
-
 
 /** ===== INTERVIEW TURN / ANSWER / EVALUATION ===== */
 export const interviewTurnAPI = {
@@ -83,7 +84,8 @@ export const interviewAnswerAPI = {
 };
 
 export const interviewEvaluationAPI = {
-  saveEvaluation: (dto) => api.post("/InterviewEvaluation/save-evaluation", dto),
+  saveEvaluation: (dto) =>
+    api.post("/InterviewEvaluation/save-evaluation", dto),
 };
 
 /** ===== AI INTERVIEW API (Separate Instance) ===== */
@@ -91,21 +93,24 @@ export const interviewEvaluationAPI = {
 const aiApiInstance = axios.create({
   baseURL: "https://ahntuann-ai-interview-backend.hf.space",
   headers: { "Content-Type": "application/json" },
-
 });
 
 export const aiInterviewAPI = {
   // Start AI interview - get first question
   start: (payload) => {
-    const finalPayload = payload ? { ...payload, use_voice_ai: true } : { use_voice_ai: true };
-    console.log('[AI VOICE] use_voice_ai enabled for /api/start');
+    const finalPayload = payload
+      ? { ...payload, use_voice_ai: true }
+      : { use_voice_ai: true };
+    console.log("[AI VOICE] use_voice_ai enabled for /api/start");
     return aiApiInstance.post("/api/start", finalPayload);
   },
-  
+
   // Submit user answer - get feedback and next question
   submit: (payload) => {
-    const finalPayload = payload ? { ...payload, use_voice_ai: true } : { use_voice_ai: true };
-    console.log('[AI VOICE] use_voice_ai enabled for /api/submit');
+    const finalPayload = payload
+      ? { ...payload, use_voice_ai: true }
+      : { use_voice_ai: true };
+    console.log("[AI VOICE] use_voice_ai enabled for /api/submit");
     return aiApiInstance.post("/api/submit", finalPayload);
   },
 };
@@ -128,30 +133,29 @@ function addPending(cb) {
   pending.push(cb);
 }
 
-
 api.interceptors.response.use(
   (res) => res,
   async (error) => {
     const original = error.config;
     const status = error.response?.status;
 
-
     if (original?._skipAuthRetry || original?.url?.includes("/Auth/refresh")) {
       console.log("Skipping interceptor for refresh endpoint");
       return Promise.reject(error);
     }
 
-
     if (status === 401 && !original?._retry) {
       console.log("=== 401 UNAUTHORIZED - Starting refresh flow ===");
       console.log("Request URL:", original.url);
       console.log("Is retry:", original._retry);
-      
+
       original._retry = true;
 
       const refreshToken = localStorage.getItem("refreshToken");
       if (!refreshToken) {
-        console.error("No refreshToken found, clearing storage and redirecting to login");
+        console.error(
+          "No refreshToken found, clearing storage and redirecting to login",
+        );
         localStorage.clear();
         window.location.href = "/login";
         return Promise.reject(error);
@@ -172,29 +176,26 @@ api.interceptors.response.use(
       // Start refresh process
       isRefreshing = true;
       console.log("Starting token refresh...");
-      
+
       try {
         const r = await authAPI.refresh(refreshToken);
         console.log("Refresh API response:", r.status, r.data);
-        
+
         const payload = r.data?.data ?? r.data;
-        
+
         if (!payload?.accessToken) {
           throw new Error("Refresh response missing accessToken");
         }
 
-    
         localStorage.setItem("token", payload.accessToken);
         if (payload.refreshToken) {
           localStorage.setItem("refreshToken", payload.refreshToken);
         }
-        
-        console.log("Token refreshed successfully");
 
+        console.log("Token refreshed successfully");
 
         onRefreshed(payload.accessToken);
 
-      
         original.headers.Authorization = `Bearer ${payload.accessToken}`;
         original._retry = false; // Reset retry flag for retry
         console.log("Retrying original request with new token");
@@ -204,17 +205,16 @@ api.interceptors.response.use(
         console.error("Error:", e);
         console.error("Response:", e.response?.data);
         console.error("Status:", e.response?.status);
-        
 
         isRefreshing = false;
         pending = [];
         localStorage.clear();
-        
+
         // Use setTimeout to avoid navigation during error handling
         setTimeout(() => {
           window.location.href = "/login";
         }, 100);
-        
+
         return Promise.reject(e);
       } finally {
         isRefreshing = false;
@@ -222,9 +222,8 @@ api.interceptors.response.use(
       }
     }
 
-
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;
