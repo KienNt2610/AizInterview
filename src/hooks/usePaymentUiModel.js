@@ -10,7 +10,7 @@ export const usePaymentUiModel = () => {
   // Mock plan data
   const plan = {
     name: 'AI Interview Pro',
-    price: '299.000đ',
+    price: '99.000đ',
     period: 'tháng',
     benefits: [
       'Phỏng vấn không giới hạn',
@@ -24,7 +24,7 @@ export const usePaymentUiModel = () => {
   // Mock order data (will be replaced with real Sepay API response)
   const order = {
     orderId: 'ORD-' + Date.now(),
-    amount: '299.000',
+    amount: '99.000',
     currency: 'VND',
     transferContent: 'PAYMENT_ORD_' + Date.now(),
     qrPlaceholder: true, // Indicates QR is not loaded yet

@@ -42,7 +42,7 @@ const HeroSection = () => {
       <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#66FCF1]/10 border border-[#66FCF1]/30 text-[#66FCF1] text-sm font-medium mb-8 glow-border">
           <Sparkles className="w-4 h-4" />
-          <span>AI-Powered Interview Practice</span>
+          <span>Luyện tập phỏng vấn được hỗ trợ bởi AI</span>
         </div>
 
         <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
@@ -52,16 +52,16 @@ const HeroSection = () => {
         </h1>
 
         <p className="text-2xl sm:text-3xl text-[#66FCF1] mb-4 font-semibold">
-          Your AI-powered interview companion
+          Người bạn đồng hành phỏng vấn được hỗ trợ bởi AI của bạn
         </p>
 
         <p className="text-lg sm:text-xl text-[#C5C6C7] mb-4 font-medium">
-          Practice smarter. Interview better.
+          Luyện tập thông minh hơn. Phỏng vấn tốt hơn.
         </p>
 
         <p className="text-base text-[#C5C6C7]/80 mb-12 max-w-2xl mx-auto">
-          Master your next interview with personalized AI feedback and real-time performance insights. 
-          Get ready to ace your dream job.
+          Làm chủ cuộc phỏng vấn tiếp theo của bạn với phản hồi AI được cá nhân hóa và thông tin hiệu suất theo thời gian thực. 
+          Sẵn sàng để đạt được công việc mơ ước của bạn.
         </p>
 
         {/* CTA Buttons */}
@@ -72,7 +72,7 @@ const HeroSection = () => {
             onClick={() => navigate('/interview')}
             className="px-8 py-6 text-lg group"
           >
-            Get Started
+            Bắt đầu
             <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
           </Button>
           <Button
@@ -83,7 +83,7 @@ const HeroSection = () => {
             }}
             className="px-8 py-6 text-lg"
           >
-            View Pricing
+            Xem giá
           </Button>
           {!isLoggedIn && (
             <Button
@@ -92,7 +92,7 @@ const HeroSection = () => {
               onClick={() => navigate('/login')}
               className="px-8 py-6 text-lg"
             >
-              Log In
+              Đăng nhập
             </Button>
           )}
         </div>
@@ -101,15 +101,15 @@ const HeroSection = () => {
         <div className="mt-20 grid grid-cols-1 sm:grid-cols-3 gap-8">
           <div className="glass rounded-xl p-6 hover:scale-105 transition-transform duration-300">
             <div className="text-3xl font-bold text-[#66FCF1] mb-2 text-glow">10K+</div>
-            <div className="text-[#C5C6C7]">Interviews Completed</div>
+            <div className="text-[#C5C6C7]">Phỏng vấn đã hoàn thành</div>
           </div>
           <div className="glass rounded-xl p-6 hover:scale-105 transition-transform duration-300">
             <div className="text-3xl font-bold text-[#66FCF1] mb-2 text-glow">98%</div>
-            <div className="text-[#C5C6C7]">User Satisfaction</div>
+            <div className="text-[#C5C6C7]">Sự hài lòng của người dùng</div>
           </div>
           <div className="glass rounded-xl p-6 hover:scale-105 transition-transform duration-300">
             <div className="text-3xl font-bold text-[#66FCF1] mb-2 text-glow">4.9/5</div>
-            <div className="text-[#C5C6C7]">Average Rating</div>
+            <div className="text-[#C5C6C7]">Đánh giá trung bình</div>
           </div>
         </div>
       </div>

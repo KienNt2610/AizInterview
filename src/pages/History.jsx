@@ -79,7 +79,7 @@ const History = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[300px]">
-        <div className="text-white/70">Loading interview history...</div>
+        <div className="text-white/70">Đang tải lịch sử phỏng vấn...</div>
       </div>
     );
   }
@@ -88,21 +88,21 @@ const History = () => {
     <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 max-w-6xl mx-auto space-y-6 sm:space-y-8">
       <div className="flex items-center justify-between mb-2">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white">Interview History</h1>
-          <p className="text-white/70 mt-1 text-sm sm:text-base">View all your past interview sessions</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white">Lịch sử phỏng vấn</h1>
+          <p className="text-white/70 mt-1 text-sm sm:text-base">Xem tất cả các phiên phỏng vấn trước đây của bạn</p>
         </div>
       </div>
 
       {interviews.length === 0 ? (
         <Card className="bg-[#1F2833]/50 border border-[#66FCF1]/20 backdrop-blur-sm">
           <CardContent className="p-12 text-center">
-            <div className="text-white/70 text-lg">No interviews found.</div>
+            <div className="text-white/70 text-lg">Không tìm thấy phỏng vấn nào.</div>
             <Button
               variant="primary"
               onClick={() => navigate("/interview")}
               className="mt-4"
             >
-              Start Your First Interview
+              Bắt đầu phỏng vấn đầu tiên
             </Button>
           </CardContent>
         </Card>
@@ -135,7 +135,7 @@ const History = () => {
                             <span className="flex items-center gap-2 px-3 py-1 bg-indigo-500/20 border border-indigo-500/30 rounded-lg">
                               <Award className="w-4 h-4 text-[#66FCF1]" />
                               <span className="text-white font-medium">
-                                Score: {getOverallScore(item)}
+                                Điểm: {getOverallScore(item)}
                               </span>
                             </span>
                           )}
@@ -149,7 +149,7 @@ const History = () => {
                       onClick={() => navigate(`/interview/${sessionId}/summary`)}
                       className="flex items-center gap-2 border-[#66FCF1]/30 text-white hover:bg-[#66FCF1]/10 hover:border-[#66FCF1]/50"
                     >
-                      View Details
+                      Xem chi tiết
                       <ArrowRight className="w-4 h-4" />
                     </Button>
                   </div>

@@ -352,9 +352,9 @@ const InterviewSetup = () => {
                 <AlertCircle className="w-6 h-6 text-red-400" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-red-400 text-lg mb-2">Interview Limit Reached</h3>
+                <h3 className="font-semibold text-red-400 text-lg mb-2">Đã đạt giới hạn phỏng vấn</h3>
                 <p className="text-red-300 mb-4">
-                  You've used all {usage?.total} interviews in your current plan. Please upgrade to continue practicing.
+                  Bạn đã sử dụng hết {usage?.total} lượt phỏng vấn trong gói hiện tại. Vui lòng nâng cấp để tiếp tục luyện tập.
                 </p>
                 <Button
                   variant="danger"
@@ -362,7 +362,7 @@ const InterviewSetup = () => {
                   className="flex items-center gap-2"
                 >
                   <CreditCard className="w-5 h-5" />
-                  Upgrade Plan
+                  Nâng cấp gói
                 </Button>
               </div>
             </div>
@@ -371,12 +371,12 @@ const InterviewSetup = () => {
       )}
 
       <div className="text-center mb-2">
-        <h1 className="text-2xl sm:text-3xl font-bold text-white">Setup Your Interview</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-white">Thiết lập phỏng vấn của bạn</h1>
         <p className="text-[#C5C6C7] mt-2 text-sm sm:text-base">
-          Select a job position and start your interview session
+          Chọn vị trí công việc và bắt đầu phiên phỏng vấn của bạn
           {!hasReachedLimit && usage && (
             <span className="block mt-1 text-[#66FCF1] font-medium">
-              {getRemainingInterviews()} interview{getRemainingInterviews() !== 1 ? "s" : ""} remaining
+              Còn lại {getRemainingInterviews()} lượt phỏng vấn
             </span>
           )}
         </p>
@@ -386,7 +386,7 @@ const InterviewSetup = () => {
         <Card className="border border-yellow-500/30 bg-yellow-900/20">
           <CardContent className="p-4 flex items-start justify-between gap-4">
             <div className="text-sm text-yellow-200">
-              <div className="font-semibold text-yellow-100 mb-1">Job list load failed</div>
+              <div className="font-semibold text-yellow-100 mb-1">Tải danh sách công việc thất bại</div>
               <div>{jobsError}</div>
             </div>
             <Button
@@ -396,7 +396,7 @@ const InterviewSetup = () => {
               className="border-yellow-400/30 text-yellow-200 hover:bg-yellow-500/10"
             >
               <RefreshCcw className="w-4 h-4 mr-2" />
-              Retry
+              Thử lại
             </Button>
           </CardContent>
         </Card>
@@ -406,17 +406,17 @@ const InterviewSetup = () => {
         <CardHeader>
           <div className="flex items-center gap-2">
             <Briefcase className="w-5 h-5 text-[#66FCF1]" />
-            <CardTitle>Select Job Description</CardTitle>
+            <CardTitle>Chọn mô tả công việc</CardTitle>
           </div>
           <CardDescription>
-            Chọn job từ backend (JobDescription)
-            {loadingJobs ? " • Loading..." : ""}
+            Chọn công việc từ backend (JobDescription)
+            {loadingJobs ? " • Đang tải..." : ""}
           </CardDescription>
         </CardHeader>
 
         <CardContent>
           {loadingJobs ? (
-            <div className="text-[#C5C6C7] text-sm">Loading job list...</div>
+            <div className="text-[#C5C6C7] text-sm">Đang tải danh sách công việc...</div>
           ) : positionCards.length === 0 ? (
             <div className="text-[#C5C6C7] text-sm">
               Không có JobDescription. Hãy kiểm tra API /api/JobDescription và DB.
@@ -446,13 +446,13 @@ const InterviewSetup = () => {
         <CardContent className="p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h3 className="font-semibold text-white text-lg">Ready to Start?</h3>
+              <h3 className="font-semibold text-white text-lg">Sẵn sàng bắt đầu?</h3>
               <p className="text-sm text-[#C5C6C7] mt-1">
-                Make sure you're in a quiet environment with a working microphone
+                Đảm bảo bạn đang ở môi trường yên tĩnh với microphone hoạt động tốt
               </p>
               {selectedJob?.label && (
                 <p className="text-sm mt-2 text-[#66FCF1]">
-                  Selected: <span className="font-semibold">{selectedJob.label}</span>
+                  Đã chọn: <span className="font-semibold">{selectedJob.label}</span>
                 </p>
               )}
             </div>
@@ -473,12 +473,12 @@ const InterviewSetup = () => {
               {loading ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Creating...
+                  Đang tạo...
                 </>
               ) : (
                 <>
                   <Video className="w-5 h-5" />
-                  Start Interview
+                  Bắt đầu phỏng vấn
                   <ArrowRight className="w-5 h-5" />
                 </>
               )}

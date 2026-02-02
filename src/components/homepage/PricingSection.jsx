@@ -7,51 +7,51 @@ const PricingSection = () => {
     {
       name: 'Basic',
       price: '59',
-      period: 'per month',
-      description: 'Perfect for trying out the platform',
+      period: 'tháng',
+      description: 'Hoàn hảo để thử nghiệm nền tảng',
       features: [
-        '5 demo interviews per month',
-        'Basic question sets',
-        'Sample feedback',
-        'No audio recording',
-        'Community support',
+        '5 lượt phỏng vấn demo mỗi tháng',
+        'Bộ câu hỏi cơ bản',
+        'Phản hồi mẫu',
+        'Không ghi âm',
+        'Hỗ trợ cộng đồng',
       ],
-      cta: 'Get Started',
+      cta: 'Bắt đầu',
       popular: false,
     },
     {
       name: 'Pro',
       price: '99',
-      period: 'per month',
-      description: 'For serious interview preparation',
+      period: 'tháng',
+      description: 'Dành cho việc chuẩn bị phỏng vấn nghiêm túc',
       features: [
-        'Unlimited interviews',
-        'Audio recording & analysis',
-        'AI-powered feedback',
-        'Performance reports',
-        'Interview history',
-        'Priority support',
-        'Custom question sets',
+        'Phỏng vấn không giới hạn',
+        'Ghi âm & phân tích',
+        'Phản hồi được hỗ trợ bởi AI',
+        'Báo cáo hiệu suất',
+        'Lịch sử phỏng vấn',
+        'Hỗ trợ ưu tiên',
+        'Bộ câu hỏi tùy chỉnh',
       ],
-      cta: 'Get Started',
+      cta: 'Bắt đầu',
       popular: true,
     },
     {
       name: 'Premium',
       price: '199',
-      period: 'per month',
-      description: 'For teams and organizations',
+      period: 'tháng',
+      description: 'Dành cho nhóm và tổ chức',
       features: [
-        'Everything in Pro',
-        'Team collaboration',
-        'Advanced analytics',
-        'Custom branding',
-        'API access',
-        'Dedicated support',
-        'Training sessions',
-        'Custom integrations',
+        'Tất cả tính năng Pro',
+        'Cộng tác nhóm',
+        'Phân tích nâng cao',
+        'Thương hiệu tùy chỉnh',
+        'Truy cập API',
+        'Hỗ trợ chuyên dụng',
+        'Buổi đào tạo',
+        'Tích hợp tùy chỉnh',
       ],
-      cta: 'Contact Sales',
+      cta: 'Liên hệ bán hàng',
       popular: false,
     },
   ];
@@ -63,13 +63,13 @@ const PricingSection = () => {
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#66FCF1]/10 border border-[#66FCF1]/30 text-[#66FCF1] text-sm font-medium mb-4 glow-border">
             <Sparkles className="w-4 h-4" />
-            <span>Pricing Plans</span>
+            <span>Gói giá</span>
           </div>
           <h2 className="text-4xl sm:text-5xl font-bold text-white mb-4">
-            Choose Your Plan
+            Chọn gói của bạn
           </h2>
           <p className="text-lg text-[#C5C6C7] max-w-2xl mx-auto">
-            Start free and upgrade as you grow. All plans include our core features.
+            Bắt đầu miễn phí và nâng cấp khi bạn phát triển. Tất cả các gói đều bao gồm các tính năng cốt lõi của chúng tôi.
           </p>
         </div>
 
@@ -87,7 +87,7 @@ const PricingSection = () => {
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                   <span className="bg-[#66FCF1] text-[#0B0C10] px-4 py-1 rounded-full text-xs font-semibold glow-primary">
-                    Most Popular
+                    Phổ biến nhất
                   </span>
                 </div>
               )}
@@ -136,10 +136,10 @@ const PricingSection = () => {
         {/* FAQ / Additional Info */}
         <div className="mt-16 text-center">
           <p className="text-[#C5C6C7]">
-            All plans include our AI-powered interview platform. Upgrade or downgrade at any time.
+            Tất cả các gói đều bao gồm nền tảng phỏng vấn được hỗ trợ bởi AI của chúng tôi. Nâng cấp hoặc hạ cấp bất cứ lúc nào.
           </p>
           <p className="text-[#C5C6C7]/60 text-sm mt-2">
-            Need a custom plan? <a href="#" className="text-[#66FCF1] hover:text-[#45A29E] transition-colors">Contact us</a>
+            Cần gói tùy chỉnh? <a href="#" className="text-[#66FCF1] hover:text-[#45A29E] transition-colors">Liên hệ chúng tôi</a>
           </p>
         </div>
       </div>

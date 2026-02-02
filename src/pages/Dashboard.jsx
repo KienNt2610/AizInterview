@@ -71,21 +71,21 @@ const Dashboard = () => {
 
   const statCards = [
     {
-      title: "Total Interviews",
+      title: "Tổng số phỏng vấn",
       value: stats.totalInterviews,
       icon: Video,
       bgColor: "bg-blue-50",
       textColor: "text-blue-600",
     },
     {
-      title: "Completed",
+      title: "Đã hoàn thành",
       value: stats.completedInterviews,
       icon: CheckCircle,
       bgColor: "bg-green-50",
       textColor: "text-green-600",
     },
     {
-      title: "Remaining Quota",
+      title: "Hạn mức còn lại",
       value: stats.remainingQuota,
       icon: Clock,
       bgColor: "bg-yellow-50",
@@ -125,11 +125,11 @@ const Dashboard = () => {
               </div>
               <div className="flex-1">
                 <h3 className="font-semibold text-white text-lg mb-2">
-                  Interview Limit Reached
+                  Đã đạt giới hạn phỏng vấn
                 </h3>
                 <p className="text-white/80 mb-4">
-                  You've used all {usage?.total} interviews in your current plan.
-                  Upgrade to continue practicing and improving your skills.
+                  Bạn đã sử dụng hết {usage?.total} lượt phỏng vấn trong gói hiện tại.
+                  Nâng cấp để tiếp tục luyện tập và cải thiện kỹ năng.
                 </p>
                 <Button
                   variant="danger"
@@ -137,7 +137,7 @@ const Dashboard = () => {
                   className="flex items-center gap-2"
                 >
                   <CreditCard className="w-5 h-5" />
-                  Upgrade Plan
+                  Nâng cấp gói
                 </Button>
               </div>
             </div>
@@ -153,13 +153,12 @@ const Dashboard = () => {
               <AlertCircle className="w-5 h-5 text-yellow-400" />
               <div className="flex-1">
                 <p className="text-white font-medium">
-                  Only {getRemainingInterviews()} interview
-                  {getRemainingInterviews() !== 1 ? "s" : ""} remaining. Consider upgrading to
-                  continue without interruption.
+                  Chỉ còn {getRemainingInterviews()} lượt phỏng vấn. Hãy cân nhắc nâng cấp để
+                  tiếp tục không bị gián đoạn.
                 </p>
               </div>
               <Button variant="outline" size="sm" onClick={() => navigate("/payment")} className="border-white/20 text-white hover:bg-white/10">
-                View Plans
+                Xem gói
               </Button>
             </div>
           </CardContent>
@@ -169,8 +168,8 @@ const Dashboard = () => {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-2">
         <div>
-          <h1 className="text-3xl font-bold text-white">Dashboard</h1>
-          <p className="text-white mt-1">Track your interview performance and progress</p>
+          <h1 className="text-3xl font-bold text-white">Bảng điều khiển</h1>
+          <p className="text-white mt-1">Theo dõi hiệu suất và tiến trình phỏng vấn của bạn</p>
         </div>
         <Button
           variant="primary"
@@ -179,7 +178,7 @@ const Dashboard = () => {
           className="flex items-center gap-2"
         >
           <Video className="w-5 h-5" />
-          New Interview
+          Phỏng vấn mới
         </Button>
       </div>
 
@@ -193,7 +192,7 @@ const Dashboard = () => {
             indigo: { bg: 'from-indigo-600/20 to-indigo-500/10', border: 'border-indigo-500/30', icon: 'text-indigo-400', iconBg: 'bg-indigo-500/20' },
             yellow: { bg: 'from-yellow-600/20 to-yellow-500/10', border: 'border-yellow-500/30', icon: 'text-yellow-400', iconBg: 'bg-yellow-500/20' },
           };
-          const colors = colorMap[stat.title === 'Total Interviews' ? 'blue' : stat.title === 'Completed' ? 'green' : 'yellow'];
+          const colors = colorMap[stat.title === 'Tổng số phỏng vấn' ? 'blue' : stat.title === 'Đã hoàn thành' ? 'green' : 'yellow'];
           
           return (
             <Card key={index} className={`hover:shadow-2xl hover:scale-105 transition-all duration-300 bg-gradient-to-br ${colors.bg} border ${colors.border} backdrop-blur-sm`}>
@@ -217,19 +216,19 @@ const Dashboard = () => {
       <Card className="bg-[#1F2833]/50 border border-[#66FCF1]/20 backdrop-blur-sm">
         <CardHeader className="flex flex-row items-center justify-between border-b border-white/10">
           <div>
-            <CardTitle className="text-white">Recent Interviews</CardTitle>
-            <CardDescription className="text-white/70">Your latest interview sessions</CardDescription>
+            <CardTitle className="text-white">Phỏng vấn gần đây</CardTitle>
+            <CardDescription className="text-white/70">Các phiên phỏng vấn mới nhất của bạn</CardDescription>
           </div>
           <Button variant="outline" size="sm" onClick={() => navigate("/history")} className="border-white/20 text-white hover:bg-white/10">
-            View All
+            Xem tất cả
           </Button>
         </CardHeader>
         <CardContent>
           {loadingHistory ? (
-            <div className="py-10 text-center text-white/70">Loading history...</div>
+            <div className="py-10 text-center text-white/70">Đang tải lịch sử...</div>
           ) : recentInterviews.length === 0 ? (
             <div className="py-10 text-center text-white/70">
-              No interviews yet. Start your first interview!
+              Chưa có phỏng vấn nào. Bắt đầu phỏng vấn đầu tiên của bạn!
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -237,16 +236,16 @@ const Dashboard = () => {
                 <thead>
                   <tr className="border-b border-white/10">
                     <th className="text-left py-3 px-4 text-sm font-semibold text-white">
-                      Position
+                      Vị trí
                     </th>
                     <th className="text-left py-3 px-4 text-sm font-semibold text-white">
-                      Date
+                      Ngày
                     </th>
                     <th className="text-left py-3 px-4 text-sm font-semibold text-white">
-                      Status
+                      Trạng thái
                     </th>
                     <th className="text-right py-3 px-4 text-sm font-semibold text-white">
-                      Action
+                      Hành động
                     </th>
                   </tr>
                 </thead>
@@ -295,7 +294,7 @@ const Dashboard = () => {
                             onClick={() => navigate(`/interview/${sessionId}/summary`)}
                             className="text-white hover:bg-white/10"
                           >
-                            View Details
+                            Xem chi tiết
                           </Button>
                         </td>
                       </tr>
@@ -317,12 +316,12 @@ const Dashboard = () => {
                 <Video className="w-6 h-6 text-indigo-400" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-white text-lg">Start New Interview</h3>
+                <h3 className="font-semibold text-white text-lg">Bắt đầu phỏng vấn mới</h3>
                 <p className="text-sm text-white/70 mt-1 mb-4">
-                  Practice with AI-powered interview questions
+                  Luyện tập với câu hỏi phỏng vấn được hỗ trợ bởi AI
                 </p>
                 <Button variant="primary" size="sm" onClick={() => navigate("/interview")}>
-                  Get Started
+                  Bắt đầu
                 </Button>
               </div>
             </div>
@@ -336,12 +335,12 @@ const Dashboard = () => {
                 <BarChart3 className="w-6 h-6 text-purple-400" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-white text-lg">View Performance</h3>
+                <h3 className="font-semibold text-white text-lg">Xem hiệu suất</h3>
                 <p className="text-sm text-white/70 mt-1 mb-4">
-                  Analyze your interview history and results
+                  Phân tích lịch sử và kết quả phỏng vấn của bạn
                 </p>
                 <Button variant="outline" size="sm" onClick={() => navigate("/history")} className="border-white/20 text-white hover:bg-white/10">
-                  View History
+                  Xem lịch sử
                 </Button>
               </div>
             </div>
