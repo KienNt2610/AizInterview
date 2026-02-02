@@ -343,7 +343,7 @@ const InterviewSetup = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 max-w-4xl mx-auto space-y-6 sm:space-y-8">
       {hasReachedLimit && (
         <Card className="border-2 border-red-500/30 bg-red-900/20">
           <CardContent className="p-6">
@@ -370,9 +370,9 @@ const InterviewSetup = () => {
         </Card>
       )}
 
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-white">Setup Your Interview</h1>
-        <p className="text-[#C5C6C7] mt-2">
+      <div className="text-center mb-2">
+        <h1 className="text-2xl sm:text-3xl font-bold text-white">Setup Your Interview</h1>
+        <p className="text-[#C5C6C7] mt-2 text-sm sm:text-base">
           Select a job position and start your interview session
           {!hasReachedLimit && usage && (
             <span className="block mt-1 text-[#66FCF1] font-medium">
@@ -422,7 +422,7 @@ const InterviewSetup = () => {
               Không có JobDescription. Hãy kiểm tra API /api/JobDescription và DB.
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               {positionCards.map((job) => (
                 <button
                   key={job.id}
@@ -443,7 +443,7 @@ const InterviewSetup = () => {
       </Card>
 
       <Card className="bg-gradient-to-br from-[#66FCF1]/10 to-[#45A29E]/10 border-[#66FCF1]/30 glow-border">
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <h3 className="font-semibold text-white text-lg">Ready to Start?</h3>

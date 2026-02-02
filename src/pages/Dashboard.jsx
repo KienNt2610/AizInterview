@@ -114,7 +114,7 @@ const Dashboard = () => {
   const getSessionId = (item) => item.sessionId ?? item.interviewSessionId ?? item.id;
 
   return (
-    <div className="space-y-6">
+    <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 max-w-7xl mx-auto space-y-6 sm:space-y-8">
       {/* Usage Limit Warning Banner */}
       {hasReachedLimit && (
         <Card className="border-2 border-red-500/30 bg-gradient-to-r from-red-900/40 to-red-800/30 backdrop-blur-sm">
@@ -167,7 +167,7 @@ const Dashboard = () => {
       )}
 
       {/* Page Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-2">
         <div>
           <h1 className="text-3xl font-bold text-white">Dashboard</h1>
           <p className="text-white mt-1">Track your interview performance and progress</p>
@@ -184,7 +184,7 @@ const Dashboard = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
         {statCards.map((stat, index) => {
           const Icon = stat.icon;
           const colorMap = {
@@ -309,7 +309,7 @@ const Dashboard = () => {
       </Card>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         <Card className="hover:shadow-2xl hover:scale-105 transition-all duration-300 bg-gradient-to-br from-indigo-600/20 to-indigo-500/10 border-2 border-indigo-500/30 backdrop-blur-sm">
           <CardContent className="p-6">
             <div className="flex items-start gap-4">

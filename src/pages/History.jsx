@@ -85,11 +85,11 @@ const History = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 max-w-6xl mx-auto space-y-6 sm:space-y-8">
+      <div className="flex items-center justify-between mb-2">
         <div>
-          <h1 className="text-3xl font-bold text-white">Interview History</h1>
-          <p className="text-white/70 mt-1">View all your past interview sessions</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white">Interview History</h1>
+          <p className="text-white/70 mt-1 text-sm sm:text-base">View all your past interview sessions</p>
         </div>
       </div>
 
@@ -107,7 +107,7 @@ const History = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6">
           {interviews.map((item, index) => {
             const sessionId = getSessionId(item);
             
@@ -116,7 +116,7 @@ const History = () => {
                 key={sessionId ?? index} 
                 className="hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 bg-gradient-to-r from-[#1F2833]/60 to-[#1F2833]/40 border border-[#66FCF1]/20 backdrop-blur-sm"
               >
-                <CardContent className="p-6">
+                <CardContent className="p-4 sm:p-6">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-4 flex-1">
                       <div className="w-14 h-14 bg-gradient-to-br from-indigo-500/30 to-indigo-600/20 rounded-xl flex items-center justify-center border border-indigo-500/30">

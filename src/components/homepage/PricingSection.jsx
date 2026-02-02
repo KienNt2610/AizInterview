@@ -5,9 +5,9 @@ import Button from '../ui/Button';
 const PricingSection = () => {
   const plans = [
     {
-      name: 'Free',
-      price: '0',
-      period: 'Forever',
+      name: 'Basic',
+      price: '59',
+      period: 'per month',
       description: 'Perfect for trying out the platform',
       features: [
         '5 demo interviews per month',
@@ -16,12 +16,12 @@ const PricingSection = () => {
         'No audio recording',
         'Community support',
       ],
-      cta: 'Try Free',
+      cta: 'Get Started',
       popular: false,
     },
     {
       name: 'Pro',
-      price: '29',
+      price: '99',
       period: 'per month',
       description: 'For serious interview preparation',
       features: [
@@ -38,7 +38,7 @@ const PricingSection = () => {
     },
     {
       name: 'Premium',
-      price: '99',
+      price: '199',
       period: 'per month',
       description: 'For teams and organizations',
       features: [
@@ -99,7 +99,7 @@ const PricingSection = () => {
                 </CardDescription>
                 <div className="mt-4">
                   <div className="flex items-baseline gap-2">
-                    <span className="text-5xl font-bold text-[#66FCF1] text-glow">${plan.price}</span>
+                    <span className="text-5xl font-bold text-[#66FCF1] text-glow">{plan.price}k</span>
                     <span className="text-[#C5C6C7]">/{plan.period}</span>
                   </div>
                 </div>
