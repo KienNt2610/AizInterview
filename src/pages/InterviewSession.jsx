@@ -1522,27 +1522,14 @@ const InterviewSession = () => {
         return;
       }
       
-      // Play transition text voice (TTS only - ignore feedback audio_base64)
+      // Display transition text only (no voice/TTS) - auto-advance after short delay
       setTimeout(() => {
-        speakTextVi(transitionText, {
-          onStart: () => {
-            console.log("[TTS] Speaking transition:", transitionText);
-            setAiSpeechState('speaking');
-          },
-          onEnd: () => {
-            console.log("[TTS] Transition speech ended");
-            console.log("[INTERVIEW] Moving to next question");
-            setAiSpeechState('done');
-            // Auto-advance to next question after transition voice ends
-            commitNextQuestion(pendingNextData);
-          },
-          onError: () => {
-            // If TTS fails, still advance
-            console.log("[INTERVIEW] Transition TTS error, moving to next question");
-            setAiSpeechState('done');
-            commitNextQuestion(pendingNextData);
-          },
-        });
+        console.log("[INTERVIEW] Transition text displayed (no voice):", transitionText);
+        console.log("[INTERVIEW] Auto-advancing to next question after 1.5s");
+        // Auto-advance to next question after showing transition text
+        setTimeout(() => {
+          commitNextQuestion(pendingNextData);
+        }, 1500); // 1.5 seconds delay to let user read the transition text
       }, 300);
       
       // IMPORTANT: DO NOT update currentQuestion state here (C.8)
