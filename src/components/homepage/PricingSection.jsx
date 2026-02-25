@@ -1,8 +1,10 @@
 import { Check, Sparkles } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../ui/Card';
 import Button from '../ui/Button';
 
 const PricingSection = () => {
+  const navigate = useNavigate();
   const plans = [
     {
       name: 'Basic',
@@ -125,6 +127,15 @@ const PricingSection = () => {
                       : 'border-[#66FCF1] text-[#66FCF1] hover:bg-[#66FCF1] hover:text-[#0B0C10]'
                   }`}
                   size="lg"
+                  onClick={() => {
+                    if (plan.cta === 'Bắt đầu') {
+                      navigate(
+                        `/payment?plan=${encodeURIComponent(
+                          plan.name,
+                        )}&price=${encodeURIComponent(plan.price)}`,
+                      );
+                    }
+                  }}
                 >
                   {plan.cta}
                 </Button>
