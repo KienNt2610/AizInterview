@@ -4,7 +4,7 @@ import { LogIn } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import { useToast } from '../components/ui/Toast';
-import { authAPI } from '../services/api';
+import { authAPI, userAPI } from '../services/api';
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -99,7 +99,77 @@ const Login = () => {
           fullName: payload.fullName ?? payload.name,
         };
 
+      // Check if this is a different user (email changed) - clear old plan data
+      const oldUser = localStorage.getItem('user');
+      let isNewUser = true;
+      if (oldUser) {
+        try {
+          const oldUserObj = JSON.parse(oldUser);
+          if (oldUserObj.email === userObj.email) {
+            isNewUser = false;
+          }
+        } catch (e) {
+          // Invalid old user data, treat as new user
+        }
+      }
+
       localStorage.setItem('user', JSON.stringify(userObj));
+
+      // Check stored email to determine if this is a different user
+      // Use storedEmail (userPlanEmail) as the source of truth, not oldUser
+      // because oldUser is cleared on logout but plan data is preserved
+      const storedEmail = localStorage.getItem("userPlanEmail");
+      const isDifferentEmail = !storedEmail || storedEmail !== userObj.email;
+      
+      // If no stored email OR different email, initialize FREE license (similar to demo license)
+      // Note: BE automatically grants demo license (1 free interview) to new users
+      // Frontend manages license state locally with email check to prevent duplicate grants
+      if (isDifferentEmail) {
+        console.log("[Login] New/different user detected:", userObj.email, "- Initializing FREE license with 0 interviews (1 free trial)");
+        console.log("[Login] Stored email:", storedEmail, "New email:", userObj.email);
+        console.log("[Login] BE automatically grants demo license to new users, frontend tracks usage locally");
+        
+        localStorage.removeItem("userPlan");
+        localStorage.removeItem("interviewCount");
+        // Set default plan for new user (FREE with 0 interviews = 1 free interview remaining)
+        localStorage.setItem("userPlan", "FREE");
+        localStorage.setItem("interviewCount", "0");
+        localStorage.setItem("userPlanEmail", userObj.email);
+      } else {
+        // Existing user with same email - keep their plan data
+        const storedPlan = localStorage.getItem("userPlan");
+        
+        if (storedPlan === "PRO") {
+          // PRO users keep their status
+          console.log("[Login] Existing PRO user with same email, keeping plan");
+          const storedCount = localStorage.getItem("interviewCount");
+          const count = storedCount ? parseInt(storedCount, 10) : 0;
+          if (isNaN(count) || count < 0) {
+            localStorage.setItem("interviewCount", "0");
+          }
+          // Ensure email is stored
+          localStorage.setItem("userPlanEmail", userObj.email);
+        } else {
+          // FREE users with same email: keep current state (don't reset)
+          // If they've used up their free interview (count = 1), keep it to block them
+          console.log("[Login] Existing FREE user with same email, keeping current state");
+          console.log("[Login] Stored email:", storedEmail, "Current email:", userObj.email, "- Keeping interviewCount");
+          // Ensure email is stored
+          localStorage.setItem("userPlanEmail", userObj.email);
+          // Validate count: only reset if invalid (negative or > 1)
+          // If count === 1, that's valid - user has used up their free interview
+          const storedCount = localStorage.getItem("interviewCount");
+          const count = storedCount ? parseInt(storedCount, 10) : 0;
+          console.log("[Login] Current interviewCount from localStorage:", storedCount, "parsed as:", count);
+          if (isNaN(count) || count < 0 || count > 1) {
+            console.log("[Login] Invalid interviewCount:", count, "resetting to 0");
+            localStorage.setItem("interviewCount", "0");
+          } else {
+            const statusMsg = count === 0 ? "1 free interview remaining" : "used up their free interview";
+            console.log("[Login] Valid interviewCount:", count, "- Keeping it (user has", statusMsg + ")");
+          }
+        }
+      }
 
       window.dispatchEvent(new Event('auth-change'));
 

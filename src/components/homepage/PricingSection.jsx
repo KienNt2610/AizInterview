@@ -7,21 +7,6 @@ const PricingSection = () => {
   const navigate = useNavigate();
   const plans = [
     {
-      name: 'Basic',
-      price: '59',
-      period: 'tháng',
-      description: 'Hoàn hảo để thử nghiệm nền tảng',
-      features: [
-        '5 lượt phỏng vấn demo mỗi tháng',
-        'Bộ câu hỏi cơ bản',
-        'Phản hồi mẫu',
-        'Không ghi âm',
-        'Hỗ trợ cộng đồng',
-      ],
-      cta: 'Bắt đầu',
-      popular: false,
-    },
-    {
       name: 'Pro',
       price: '99',
       period: 'tháng',
@@ -37,24 +22,6 @@ const PricingSection = () => {
       ],
       cta: 'Bắt đầu',
       popular: true,
-    },
-    {
-      name: 'Premium',
-      price: '199',
-      period: 'tháng',
-      description: 'Dành cho nhóm và tổ chức',
-      features: [
-        'Tất cả tính năng Pro',
-        'Cộng tác nhóm',
-        'Phân tích nâng cao',
-        'Thương hiệu tùy chỉnh',
-        'Truy cập API',
-        'Hỗ trợ chuyên dụng',
-        'Buổi đào tạo',
-        'Tích hợp tùy chỉnh',
-      ],
-      cta: 'Liên hệ bán hàng',
-      popular: false,
     },
   ];
 
@@ -76,7 +43,7 @@ const PricingSection = () => {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 gap-8 max-w-md mx-auto">
           {plans.map((plan, index) => (
             <Card
               key={index}

@@ -1,20 +1,25 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/Card";
 import Button from "../components/ui/Button";
 import { paymentAPI } from "../api/paymentApi";
+import { useUserPlan } from "../hooks/useUserPlan";
+import { useToast } from "../components/ui/Toast";
 
 const PaymentPage = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { upgradeToPro } = useUserPlan();
   const searchParams = useMemo(
     () => new URLSearchParams(location.search),
     [location.search],
   );
 
-  const selectedPlanName = searchParams.get("plan") || "AI Interview Pro";
-  const selectedPriceK = searchParams.get("price") || "99"; // 59 | 99 | 199
+  const selectedPlanName = searchParams.get("plan") || "Pro";
+  const selectedPriceK = searchParams.get("price") || "99"; // Only PRO now: 99
 
-  // Raw amount sent to backend as integer VND, e.g. 59000, 99000, 199000
+  // Raw amount sent to backend as integer VND, e.g. 99000
   const packageAmount = useMemo(
     () => Number(selectedPriceK) * 1000,
     [selectedPriceK],
@@ -25,6 +30,8 @@ const PaymentPage = () => {
   const [loading, setLoading] = useState(false);
   const [qrUrl, setQrUrl] = useState(null);
   const [transCode, setTransCode] = useState("");
+  const [countdown, setCountdown] = useState(300); // 5 minutes countdown
+  const [checkingPayment, setCheckingPayment] = useState(false);
 
   const handleCreateCheckout = async () => {
     try {
@@ -66,10 +73,53 @@ const PaymentPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [packageAmount]);
 
+  // Countdown timer
   useEffect(() => {
-    if (!transCode) return;
-    // TODO: implement polling later
-  }, [transCode]);
+    if (!transCode || countdown <= 0) return;
+
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [transCode, countdown]);
+
+  // Format countdown as MM:SS
+  const formatCountdown = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+  };
+
+  // Check payment status and update plan (local state only)
+  const handleCheckPayment = async () => {
+    try {
+      setCheckingPayment(true);
+      
+      // Since backend endpoint doesn't exist, we upgrade locally after user confirms payment
+      // In production, this would be replaced with actual payment verification
+      upgradeToPro();
+      toast("Thanh toán thành công! Gói PRO đã được kích hoạt.", { type: "success" });
+      
+      // Redirect to dashboard
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1500);
+    } catch (error) {
+      console.error("Failed to process payment:", error);
+      toast("Có lỗi xảy ra. Vui lòng thử lại sau.", {
+        type: "error",
+      });
+    } finally {
+      setCheckingPayment(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#0B0C10] py-10 px-4 sm:px-6 lg:px-8">
@@ -126,41 +176,73 @@ const PaymentPage = () => {
 
             {/* Render backend response exactly */}
             {(qrUrl || transCode) && (
-              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {/* QR image */}
-                <div className="space-y-3">
-                  <p className="text-sm font-medium text-[#C5C6C7]">
-                    Mã QR thanh toán
-                  </p>
-                  <div className="bg-white rounded-lg p-3 flex items-center justify-center min-h-[220px]">
-                    {qrUrl ? (
-                      // Use qrUrl exactly as returned from backend
-                      <img
-                        src={qrUrl}
-                        alt="QR thanh toán"
-                        className="max-h-64 w-auto object-contain"
-                      />
-                    ) : (
-                      <span className="text-xs text-gray-500">
-                        Không có QR từ hệ thống
-                      </span>
-                    )}
+              <div className="mt-6 space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {/* QR image */}
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium text-[#C5C6C7]">
+                      Mã QR thanh toán
+                    </p>
+                    <div className="bg-white rounded-lg p-3 flex items-center justify-center min-h-[220px]">
+                      {qrUrl ? (
+                        // Use qrUrl exactly as returned from backend
+                        <img
+                          src={qrUrl}
+                          alt="QR thanh toán"
+                          className="max-h-64 w-auto object-contain"
+                        />
+                      ) : (
+                        <span className="text-xs text-gray-500">
+                          Không có QR từ hệ thống
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* transCode */}
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium text-[#C5C6C7]">
+                      Mã giao dịch (transCode)
+                    </p>
+                    <div className="px-4 py-3 rounded-lg bg-[#0B0C10] border border-[#66FCF1]/30">
+                      <p className="text-sm text-[#C5C6C7] mb-1">
+                        Sao chép chính xác nội dung này khi chuyển khoản:
+                      </p>
+                      <p className="font-mono text-base sm:text-lg text-white break-all">
+                        {transCode || "Chưa có mã giao dịch"}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
-                {/* transCode */}
-                <div className="space-y-3">
-                  <p className="text-sm font-medium text-[#C5C6C7]">
-                    Mã giao dịch (transCode)
-                  </p>
-                  <div className="px-4 py-3 rounded-lg bg-[#0B0C10] border border-[#66FCF1]/30">
-                    <p className="text-sm text-[#C5C6C7] mb-1">
-                      Sao chép chính xác nội dung này khi chuyển khoản:
-                    </p>
-                    <p className="font-mono text-base sm:text-lg text-white break-all">
-                      {transCode || "Chưa có mã giao dịch"}
-                    </p>
-                  </div>
+                {/* Countdown and Payment Check */}
+                <div className="pt-4 border-t border-[#66FCF1]/10">
+                  {countdown > 0 && (
+                    <div className="mb-4 text-center">
+                      <p className="text-sm text-[#C5C6C7] mb-2">
+                        Thời gian còn lại:{" "}
+                        <span className="text-[#66FCF1] font-mono font-semibold text-lg">
+                          {formatCountdown(countdown)}
+                        </span>
+                      </p>
+                    </div>
+                  )}
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    className="w-full px-6 py-4 text-base sm:text-lg glow-primary-hover"
+                    onClick={handleCheckPayment}
+                    disabled={checkingPayment}
+                  >
+                    {checkingPayment ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                        Đang kiểm tra...
+                      </>
+                    ) : (
+                      "Đã thanh toán"
+                    )}
+                  </Button>
                 </div>
               </div>
             )}

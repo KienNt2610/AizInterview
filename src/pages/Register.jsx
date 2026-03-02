@@ -91,6 +91,18 @@ const Register = () => {
 
       await authAPI.register(payload);
 
+      // Note: BE automatically grants demo license (1 free interview) to new users
+      // Frontend manages license state locally with email check to prevent duplicate grants
+      
+      // Clear any old plan data from localStorage (fresh start for new user)
+      // Set default plan for new user (FREE with 0 interviews = 1 free interview remaining)
+      localStorage.removeItem("userPlan");
+      localStorage.removeItem("interviewCount");
+      localStorage.removeItem("userPlanEmail");
+      localStorage.setItem("userPlan", "FREE");
+      localStorage.setItem("interviewCount", "0");
+      // Note: email will be stored when user logs in
+
       toast('Registration successful! Redirecting to login...', { type: 'success' });
       navigate('/login');
     } catch (error) {

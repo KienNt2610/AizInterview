@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, ArrowRight } from 'lucide-react';
 import Button from '../ui/Button';
+import { useUserPlan } from '../../hooks/useUserPlan';
 
 const HeroSection = () => {
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { plan, interviewCount, getRemainingInterviews } = useUserPlan();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -59,10 +61,25 @@ const HeroSection = () => {
           Luyện tập thông minh hơn. Phỏng vấn tốt hơn.
         </p>
 
-        <p className="text-base text-[#C5C6C7]/80 mb-12 max-w-2xl mx-auto">
+        <p className="text-base text-[#C5C6C7]/80 mb-6 max-w-2xl mx-auto">
           Làm chủ cuộc phỏng vấn tiếp theo của bạn với phản hồi AI được cá nhân hóa và thông tin hiệu suất theo thời gian thực. 
           Sẵn sàng để đạt được công việc mơ ước của bạn.
         </p>
+
+        {/* Plan Status */}
+        {isLoggedIn && (
+          <div className="mb-12">
+            {plan === "FREE" ? (
+              <p className="text-lg text-[#66FCF1] font-medium">
+                Bạn còn {getRemainingInterviews()}/1 lượt phỏng vấn miễn phí.
+              </p>
+            ) : (
+              <p className="text-lg text-[#66FCF1] font-medium">
+                PRO — phỏng vấn không giới hạn
+              </p>
+            )}
+          </div>
+        )}
 
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

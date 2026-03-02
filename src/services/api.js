@@ -33,9 +33,33 @@ export const authAPI = {
   },
 
   logout: () => {
+    // Save email before removing user data (to preserve plan data for same email on next login)
+    const userStr = localStorage.getItem("user");
+    let userEmail = null;
+    try {
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        userEmail = user?.email;
+      }
+    } catch (e) {
+      // Ignore parse errors
+    }
+    
     localStorage.removeItem("token");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
+    
+    // Keep plan data and email to preserve interviewCount for same email on next login
+    // Only clear if we don't have email to preserve
+    if (!userEmail) {
+      localStorage.removeItem("userPlan");
+      localStorage.removeItem("interviewCount");
+      localStorage.removeItem("userPlanEmail");
+    }
+    // If we have email, keep userPlanEmail so we can check on next login
+    
+    // Dispatch event to notify components
+    window.dispatchEvent(new Event('auth-change'));
     return Promise.resolve();
   },
 };

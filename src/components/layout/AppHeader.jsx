@@ -9,7 +9,17 @@ const AppHeader = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  const user = JSON.parse(localStorage.getItem('user') || '{"name": "User", "email": "user@example.com"}');
+  // Safely parse user from localStorage
+  let user = { name: "User", email: "user@example.com" };
+  try {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      user = JSON.parse(userStr);
+    }
+  } catch (e) {
+    console.error('Failed to parse user from localStorage:', e);
+  }
+  
   const token = localStorage.getItem('token');
   const isAuthenticated = !!token;
 

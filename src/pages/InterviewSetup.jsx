@@ -18,18 +18,30 @@ import {
 import Button from "../components/ui/Button";
 import { useToast } from "../components/ui/Toast";
 import { jobAPI, interviewSessionAPI, aiInterviewAPI } from "../services/api";
-import { useUsageLimit } from "../hooks/useUsageLimit";
+// Removed useUsageLimit - using useUserPlan instead
+// import { useUsageLimit } from "../hooks/useUsageLimit";
+import { useUserPlan } from "../hooks/useUserPlan";
+import UpgradeModal from "../components/UpgradeModal";
 import { extractAudioBase64 } from "../utils/aiAudio";
 import { unlockTTS } from "../utils/tts";
 
 const InterviewSetup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { hasReachedLimit, getRemainingInterviews, usage } = useUsageLimit();
+  // Removed useUsageLimit - using useUserPlan instead
+  // const { hasReachedLimit, getRemainingInterviews, usage } = useUsageLimit();
+  const {
+    plan,
+    interviewCount,
+    canStartInterview,
+    incrementInterviewCount,
+    hasReachedLimit: hasReachedFreeLimit,
+  } = useUserPlan();
 
   const [loading, setLoading] = useState(false);
   const [loadingJobs, setLoadingJobs] = useState(false);
   const [jobsError, setJobsError] = useState("");
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const [jobs, setJobs] = useState([]);
   const [jobDescriptionId, setJobDescriptionId] = useState("");
@@ -112,9 +124,64 @@ const InterviewSetup = () => {
     return positionCards.find((x) => x.id === jobDescriptionId) || null;
   }, [jobDescriptionId, positionCards]);
 
+  // Debug: Log button disabled conditions
+  useEffect(() => {
+    const canStart = canStartInterview();
+    const hasReachedLimit = hasReachedFreeLimit();
+    const disabledConditions = {
+      loading,
+      hasReachedFreeLimit: hasReachedLimit,
+      cannotStart: !canStart,
+      loadingJobs,
+      noJobs: positionCards.length === 0,
+      noJobSelected: !jobDescriptionId,
+    };
+    
+    const buttonDisabled = Object.values(disabledConditions).some(v => v === true);
+    
+    console.log("[InterviewSetup] Button state check:", {
+      plan,
+      interviewCount,
+      canStartInterview: canStart,
+      hasReachedFreeLimit: hasReachedLimit,
+      loading,
+      loadingJobs,
+      positionCardsLength: positionCards.length,
+      jobDescriptionId,
+      buttonDisabled,
+      disabledConditions,
+      // Show which specific condition is causing the button to be disabled
+      disabledReason: Object.entries(disabledConditions)
+        .filter(([_, value]) => value === true)
+        .map(([key]) => key)
+        .join(", ") || "NONE (button should be enabled)",
+    });
+  }, [plan, interviewCount, canStartInterview, hasReachedFreeLimit, loading, loadingJobs, positionCards.length, jobDescriptionId]);
+
   const handleStartInterview = async () => {
+    console.log("=== handleStartInterview CALLED ===");
+    console.log("Current state:", {
+      plan,
+      interviewCount,
+      canStartInterview: canStartInterview(),
+      hasReachedFreeLimit: hasReachedFreeLimit(),
+      loading,
+      loadingJobs,
+      positionCardsLength: positionCards.length,
+      jobDescriptionId,
+      selectedJob,
+    });
+    
     if (!jobDescriptionId) {
+      console.warn("[handleStartInterview] No jobDescriptionId selected");
       toast("Vui lòng chọn Job Description (từ backend).", { type: "warning" });
+      return;
+    }
+
+    // Check plan and interview count before starting
+    if (!canStartInterview()) {
+      console.warn("[handleStartInterview] Cannot start interview - showing upgrade modal");
+      setShowUpgradeModal(true);
       return;
     }
 
@@ -231,6 +298,11 @@ const InterviewSetup = () => {
         localStorage.setItem("interviewContext", JSON.stringify(interviewContext));
         console.log("Saved interviewContext with AI state:", interviewContext);
 
+        // Increment interview count for FREE users (before navigation)
+        if (plan === "FREE") {
+          incrementInterviewCount();
+        }
+
         toast("Interview created successfully!", { type: "success" });
         
         // Navigate to interview session page
@@ -344,7 +416,7 @@ const InterviewSetup = () => {
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 max-w-4xl mx-auto space-y-6 sm:space-y-8">
-      {hasReachedLimit && (
+      {hasReachedFreeLimit() && plan === "FREE" && interviewCount >= 1 && (
         <Card className="border-2 border-red-500/30 bg-red-900/20">
           <CardContent className="p-6">
             <div className="flex items-start gap-4">
@@ -354,15 +426,15 @@ const InterviewSetup = () => {
               <div className="flex-1">
                 <h3 className="font-semibold text-red-400 text-lg mb-2">Đã đạt giới hạn phỏng vấn</h3>
                 <p className="text-red-300 mb-4">
-                  Bạn đã sử dụng hết {usage?.total} lượt phỏng vấn trong gói hiện tại. Vui lòng nâng cấp để tiếp tục luyện tập.
+                  Bạn đã sử dụng hết 1 lượt phỏng vấn miễn phí. Vui lòng nâng cấp gói PRO để tiếp tục luyện tập.
                 </p>
                 <Button
                   variant="danger"
-                  onClick={() => navigate("/payment")}
+                  onClick={() => navigate("/payment?plan=Pro&price=99")}
                   className="flex items-center gap-2"
                 >
                   <CreditCard className="w-5 h-5" />
-                  Nâng cấp gói
+                  Nâng cấp gói PRO
                 </Button>
               </div>
             </div>
@@ -374,9 +446,14 @@ const InterviewSetup = () => {
         <h1 className="text-2xl sm:text-3xl font-bold text-white">Thiết lập phỏng vấn của bạn</h1>
         <p className="text-[#C5C6C7] mt-2 text-sm sm:text-base">
           Chọn vị trí công việc và bắt đầu phiên phỏng vấn của bạn
-          {!hasReachedLimit && usage && (
+          {plan === "FREE" && interviewCount < 1 && (
             <span className="block mt-1 text-[#66FCF1] font-medium">
-              Còn lại {getRemainingInterviews()} lượt phỏng vấn
+              Bạn còn {1 - interviewCount}/1 lượt phỏng vấn miễn phí
+            </span>
+          )}
+          {plan === "PRO" && (
+            <span className="block mt-1 text-[#66FCF1] font-medium">
+              PRO — phỏng vấn không giới hạn
             </span>
           )}
         </p>
@@ -463,7 +540,8 @@ const InterviewSetup = () => {
               onClick={handleStartInterview}
               disabled={
                 loading ||
-                hasReachedLimit ||
+                hasReachedFreeLimit() ||
+                !canStartInterview() ||
                 loadingJobs ||
                 positionCards.length === 0 ||
                 !jobDescriptionId
@@ -486,6 +564,8 @@ const InterviewSetup = () => {
           </div>
         </CardContent>
       </Card>
+
+      <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
     </div>
   );
 };
