@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
   Mic, 
@@ -40,29 +40,29 @@ const MAX_QUESTIONS = 12;
 
 // Transition responses for simplified evaluation display
 const PASS_RESPONSES = [
-  "Ổn rồi, mình sang câu tiếp theo nhé.",
-  "Tốt lắm, tiếp tục nào.",
-  "Ok, câu này ổn, sang câu khác.",
-  "Anh ghi nhận, mình đi tiếp nhé.",
-  "Câu trả lời ổn, tiếp theo.",
-  "Được rồi, sang câu tiếp.",
-  "Tạm ổn, mình tiếp tục.",
-  "Ok, câu sau nhé.",
-  "Anh hiểu rồi, sang câu tiếp.",
-  "Ổn áp, mình đi tiếp.",
+  "á»”n rá»“i, mÃ¬nh sang cÃ¢u tiáº¿p theo nhÃ©.",
+  "Tá»‘t láº¯m, tiáº¿p tá»¥c nÃ o.",
+  "Ok, cÃ¢u nÃ y á»•n, sang cÃ¢u khÃ¡c.",
+  "Anh ghi nháº­n, mÃ¬nh Ä‘i tiáº¿p nhÃ©.",
+  "CÃ¢u tráº£ lá»i á»•n, tiáº¿p theo.",
+  "ÄÆ°á»£c rá»“i, sang cÃ¢u tiáº¿p.",
+  "Táº¡m á»•n, mÃ¬nh tiáº¿p tá»¥c.",
+  "Ok, cÃ¢u sau nhÃ©.",
+  "Anh hiá»ƒu rá»“i, sang cÃ¢u tiáº¿p.",
+  "á»”n Ã¡p, mÃ¬nh Ä‘i tiáº¿p.",
 ];
 
 const FAIL_RESPONSES = [
-  "Chưa ổn lắm, mình thử câu khác nhé.",
-  "Không sao, sang câu tiếp.",
-  "Câu này chưa đúng, mình tiếp tục.",
-  "Ổn thôi, mình đi tiếp.",
-  "Không vấn đề, sang câu sau.",
-  "Chưa chính xác, thử câu khác.",
-  "Ok, bỏ qua câu này nhé.",
-  "Mình sang câu tiếp theo.",
-  "Chưa đạt, tiếp tục.",
-  "Không sao, câu tiếp nhé.",
+  "ChÆ°a á»•n láº¯m, mÃ¬nh thá»­ cÃ¢u khÃ¡c nhÃ©.",
+  "KhÃ´ng sao, sang cÃ¢u tiáº¿p.",
+  "CÃ¢u nÃ y chÆ°a Ä‘Ãºng, mÃ¬nh tiáº¿p tá»¥c.",
+  "á»”n thÃ´i, mÃ¬nh Ä‘i tiáº¿p.",
+  "KhÃ´ng váº¥n Ä‘á», sang cÃ¢u sau.",
+  "ChÆ°a chÃ­nh xÃ¡c, thá»­ cÃ¢u khÃ¡c.",
+  "Ok, bá» qua cÃ¢u nÃ y nhÃ©.",
+  "MÃ¬nh sang cÃ¢u tiáº¿p theo.",
+  "ChÆ°a Ä‘áº¡t, tiáº¿p tá»¥c.",
+  "KhÃ´ng sao, cÃ¢u tiáº¿p nhÃ©.",
 ];
 
 const InterviewSession = () => {
@@ -141,6 +141,8 @@ const InterviewSession = () => {
   const [savedAnswerTurnIds, setSavedAnswerTurnIds] = useState(new Set()); 
 
   const [turnIdToAnswerIdMap, setTurnIdToAnswerIdMap] = useState(new Map()); 
+  const isLocalDemoSession =
+    String(sessionId || "").startsWith("demo-") || Boolean(interviewContext?.isLocalDemo);
   
   // Audio recording refs
   const mediaRecorderRef = useRef(null);
@@ -154,7 +156,7 @@ const InterviewSession = () => {
   // Auto-next timeout after showing feedback
   const autoNextTimeoutRef = useRef(null);
 
-  // Auto-submit "không biết" timeout per question
+  // Auto-submit "khÃ´ng biáº¿t" timeout per question
   const autoSubmitTimerRef = useRef(null);
   const hasAutoSubmittedRef = useRef(false);
 
@@ -286,7 +288,7 @@ const InterviewSession = () => {
       
       const contextStr = localStorage.getItem('interviewContext');
       if (!contextStr) {
-        toast('Không tìm thấy thông tin interview. Vui lòng bắt đầu lại.', { type: 'error' });
+        toast('KhÃ´ng tÃ¬m tháº¥y thÃ´ng tin interview. Vui lÃ²ng báº¯t Ä‘áº§u láº¡i.', { type: 'error' });
         navigate('/interview');
         return;
       }
@@ -329,7 +331,7 @@ const InterviewSession = () => {
       // Validate question data
       if (!questionId || !questionText || questionText.trim().length === 0) {
         console.error("=== HYDRATION ERROR: Missing question data ===");
-        toast('Không tìm thấy câu hỏi đầu tiên. Vui lòng bắt đầu lại.', { type: 'error' });
+        toast('KhÃ´ng tÃ¬m tháº¥y cÃ¢u há»i Ä‘áº§u tiÃªn. Vui lÃ²ng báº¯t Ä‘áº§u láº¡i.', { type: 'error' });
         navigate('/interview');
         return;
       }
@@ -355,8 +357,8 @@ const InterviewSession = () => {
       
     } catch (error) {
       console.error('Failed to load interview data:', error);
-      toast('Không thể tải dữ liệu interview', { type: 'error' });
-      setError('Không thể tải dữ liệu interview');
+      toast('KhÃ´ng thá»ƒ táº£i dá»¯ liá»‡u interview', { type: 'error' });
+      setError('KhÃ´ng thá»ƒ táº£i dá»¯ liá»‡u interview');
     }
   };
   
@@ -668,7 +670,7 @@ const InterviewSession = () => {
       return;
     }
 
-    // If still recording, stop recording first (nhưng vẫn auto gửi "không biết")
+    // If still recording, stop recording first (nhÆ°ng váº«n auto gá»­i "khÃ´ng biáº¿t")
     if (recordingState === 'recording') {
       console.log('=== [AUTO] Stopping recording before auto-submit ===');
       stopRecording();
@@ -676,11 +678,11 @@ const InterviewSession = () => {
 
     hasAutoSubmittedRef.current = true;
 
-    toast('Hết thời gian. Tự động gửi: "không biết"', { type: 'warning' });
+    toast('Háº¿t thá»i gian. Tá»± Ä‘á»™ng gá»­i: "khÃ´ng biáº¿t"', { type: 'warning' });
 
-    // Force answer "không biết", bypass STT
+    // Force answer "khÃ´ng biáº¿t", bypass STT
     handleSubmitAnswer({
-      forceTextAnswer: 'không biết',
+      forceTextAnswer: 'khÃ´ng biáº¿t',
       reason: 'timeout_60s',
     });
   };
@@ -725,7 +727,7 @@ const InterviewSession = () => {
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      // User bắt đầu ghi âm, clear auto-timeout để không đè lên hành vi user
+      // User báº¯t Ä‘áº§u ghi Ã¢m, clear auto-timeout Ä‘á»ƒ khÃ´ng Ä‘Ã¨ lÃªn hÃ nh vi user
       clearAutoSubmitTimer('startRecording');
 
       mediaRecorderRef.current = new MediaRecorder(stream);
@@ -829,10 +831,10 @@ const InterviewSession = () => {
       // Phase stays 'asking' - user is recording
       // Clear previous transcript when starting new recording
       setTranscriptText('');
-      toast('Bắt đầu ghi âm', { type: 'info' });
+      toast('Báº¯t Ä‘áº§u ghi Ã¢m', { type: 'info' });
     } catch (error) {
-      toast('Không thể bắt đầu ghi âm. Vui lòng kiểm tra quyền truy cập microphone.', { type: 'error' });
-      setError('Không thể truy cập microphone');
+      toast('KhÃ´ng thá»ƒ báº¯t Ä‘áº§u ghi Ã¢m. Vui lÃ²ng kiá»ƒm tra quyá»n truy cáº­p microphone.', { type: 'error' });
+      setError('KhÃ´ng thá»ƒ truy cáº­p microphone');
     }
   };
 
@@ -840,7 +842,7 @@ const InterviewSession = () => {
     if (mediaRecorderRef.current && recordingState === 'recording') {
       mediaRecorderRef.current.stop();
       setIsRecording(false); // Clear recording state
-      toast('Đã dừng ghi âm', { type: 'info' });
+      toast('ÄÃ£ dá»«ng ghi Ã¢m', { type: 'info' });
     }
   };
   
@@ -866,19 +868,19 @@ const InterviewSession = () => {
       console.warn("=== SUBMISSION BLOCKED: Already in progress ===");
       console.warn("submitLockRef.current:", submitLockRef.current);
       console.warn("isSubmitting:", isSubmitting, "isAnswerProcessing:", isAnswerProcessing);
-      toast('Đang xử lý câu trả lời. Vui lòng đợi...', { type: 'warning' });
+      toast('Äang xá»­ lÃ½ cÃ¢u tráº£ lá»i. Vui lÃ²ng Ä‘á»£i...', { type: 'warning' });
       return;
     }
     
     // Validation: Must have interview context
     if (!interviewContext) {
-      toast('Không tìm thấy thông tin interview', { type: 'error' });
+      toast('KhÃ´ng tÃ¬m tháº¥y thÃ´ng tin interview', { type: 'error' });
       return;
     }
     
     // Validation: Must have current question (single source of truth)
     if (!turnState.currentQuestion || !turnState.currentQuestion.id || !turnState.currentQuestion.text) {
-      toast('Không tìm thấy câu hỏi hiện tại', { type: 'error' });
+      toast('KhÃ´ng tÃ¬m tháº¥y cÃ¢u há»i hiá»‡n táº¡i', { type: 'error' });
       return;
     }
     
@@ -908,6 +910,8 @@ const InterviewSession = () => {
       askedIds: [...turnState.askedIds], // Must include currentQuestion.id
       turnIndex: turnState.turnIndex,
     };
+    const useLocalDemoMode =
+      String(sessionId || "").startsWith("demo-") || Boolean(interviewContext?.isLocalDemo);
     
     // Verify askedIds includes currentQuestion.id (guard)
     const currentQuestionIdStr = String(stateSnapshot.currentQuestion.id);
@@ -954,54 +958,12 @@ const InterviewSession = () => {
           answerLength: finalTranscriptText.length,
           answerPreview: finalTranscriptText.substring(0, 100),
         });
-      } else {
-        // Auto-transcribe if transcript is empty (using Web Speech API)
-        if (!finalTranscriptText || finalTranscriptText.length === 0) {
-          try {
-            setIsTranscribing(true);
-            console.log("=== AUTO-TRANSCRIBING USING WEB SPEECH API ===");
-            console.log("Note: Web Speech API requires live microphone input. User will need to speak again.");
-            
-            toast('Vui lòng nói lại câu trả lời để chuyển đổi thành văn bản...', { type: 'info' });
-            
-            // Use Web Speech API for real-time speech recognition
-            // Note: Web Speech API requires live microphone input, not audio blobs
-            // User will need to speak again when this is called
-            finalTranscriptText = await speechToTextOnce();
-            
-            // Guard: Reject mock/hard-coded transcript text
-            if (finalTranscriptText && finalTranscriptText.toLowerCase().includes('bản ghi âm mẫu')) {
-              throw new Error('Phát hiện văn bản mẫu. Vui lòng ghi âm lại với giọng nói thật.');
-            }
-            
-            console.log("=== TRANSCRIPTION COMPLETE (REAL) ===");
-            console.log("REAL Transcript length:", finalTranscriptText.length);
-            console.log("REAL Transcript text:", finalTranscriptText);
-            console.log("REAL Transcript preview:", finalTranscriptText.substring(0, 100) + (finalTranscriptText.length > 100 ? '...' : ''));
-            
-            setTranscriptText(finalTranscriptText); // Update state for UI
-            toast('Đã chuyển đổi giọng nói thành văn bản!', { type: 'success' });
-          } catch (transcribeError) {
-            console.error('Transcription error:', transcribeError);
-            const errorMsg = transcribeError?.message || 'Không thể chuyển đổi giọng nói thành văn bản. Vui lòng thử lại.';
-            setError(errorMsg);
-            toast(errorMsg, { type: 'error' });
-            setIsAnswerProcessing(false);
-            setIsTranscribing(false);
-            setIsSubmitting(false);
-            submitLockRef.current = false; // Release submit lock
-            // Phase stays 'asking' - user can retry
-            return; // Stop here if transcription fails
-          } finally {
-            setIsTranscribing(false);
-          }
-        }
       }
-      
+
       // Final validation: if still empty after transcription, use fallback (Task 3)
       if (!finalTranscriptText || finalTranscriptText.trim().length === 0) {
         console.warn("=== EMPTY TRANSCRIPT: Using fallback text ===");
-        finalTranscriptText = "Tôi không trả lời câu này."; // Fallback for empty transcript
+        finalTranscriptText = "không biết"; // Fallback for empty transcript
         setTranscriptText(finalTranscriptText);
       }
       
@@ -1009,13 +971,13 @@ const InterviewSession = () => {
       finalTranscriptText = finalTranscriptText.trim();
       
       // Guard: Reject mock/hard-coded transcript text
-      if (finalTranscriptText.toLowerCase().includes('bản ghi âm mẫu')) {
-        throw new Error('Phát hiện văn bản mẫu. Vui lòng ghi âm lại với giọng nói thật.');
+      if (finalTranscriptText.toLowerCase().includes('báº£n ghi Ã¢m máº«u')) {
+        throw new Error('PhÃ¡t hiá»‡n vÄƒn báº£n máº«u. Vui lÃ²ng ghi Ã¢m láº¡i vá»›i giá»ng nÃ³i tháº­t.');
       }
       
       // Ensure we have a valid answer (either real transcript or fallback)
       if (!finalTranscriptText || finalTranscriptText.length === 0) {
-        throw new Error('Không thể xác định câu trả lời. Vui lòng thử lại.');
+        throw new Error('KhÃ´ng thá»ƒ xÃ¡c Ä‘á»‹nh cÃ¢u tráº£ lá»i. Vui lÃ²ng thá»­ láº¡i.');
       }
       
       console.log("=== FINAL USER ANSWER ===");
@@ -1029,245 +991,122 @@ const InterviewSession = () => {
         return;
       }
       
-      // Pipeline Step 4: Save TURN (question) to DB -> get InterviewTurnId (C.4)
-      console.log("=== STEP 4: Saving TURN to DB ===");
-      const turnIndex = stateSnapshot.turnIndex;
-      
-      // 1) Save TURN (question) to DB
-      // Đảm bảo interviewSessionId là string (uuid), không phải number
-      const interviewSessionIdStr = String(sessionId);
-      
-      // Build payload theo DTO backend yêu cầu: SaveInterviewTurnDto
-      // Required: InterviewSessionId (Guid), TurnIndex (int), QuestionText (string), Difficulty (string)
-      // Optional: QuestionId (string)
-      // Note: QuestionText lấy từ currentQuestion.text (single source of truth)
-      const saveTurnPayload = {
-        InterviewSessionId: interviewSessionIdStr, // Guid (string) - Required
-        TurnIndex: Number(turnIndex), // int - Required, bắt đầu từ 1
-        QuestionText: stateSnapshot.currentQuestion.text || '', // string - Required (lấy từ currentQuestion.text)
-        Difficulty: stateSnapshot.currentQuestion.difficulty || 'intermediate', // string - Required
-        // Optional fields
-        QuestionId: stateSnapshot.currentQuestion.id ? String(stateSnapshot.currentQuestion.id) : undefined, // string - Optional (không gửi nếu null/empty)
-      };
-      
-      // Remove undefined fields để payload clean
-      if (!saveTurnPayload.QuestionId) {
-        delete saveTurnPayload.QuestionId;
-      }
-      
-      console.log("=== SAVE TURN PAYLOAD ===");
-      console.log("Payload:", JSON.stringify(saveTurnPayload, null, 2));
-      console.log("InterviewSessionId (type):", typeof saveTurnPayload.InterviewSessionId, "value:", saveTurnPayload.InterviewSessionId);
-      console.log("TurnIndex (type):", typeof saveTurnPayload.TurnIndex, "value:", saveTurnPayload.TurnIndex);
-      console.log("QuestionText (from AI display_text):", saveTurnPayload.QuestionText);
-      console.log("Difficulty:", saveTurnPayload.Difficulty);
-      if (saveTurnPayload.QuestionId) {
-        console.log("QuestionId (optional):", saveTurnPayload.QuestionId);
-      }
-      
-      let turnResponse;
-      let turnId = null;
-      try {
-        turnResponse = await interviewTurnAPI.saveTurn(saveTurnPayload);
-        console.log("=== SAVE TURN SUCCESS ===");
-        console.log("Response status:", turnResponse.status);
-        console.log("Response data:", JSON.stringify(turnResponse.data, null, 2));
-        console.log("Response data (raw):", turnResponse.data);
-        
-        // Extract InterviewTurnId from response
-        // Backend returns: { data: "<InterviewTurnId-guid>", error: null, isSuccess: true }
-        // InterviewTurnId is the GUID string in response.data.data
-        turnId = turnResponse?.data?.data ?? // GUID string directly in data.data
-                 turnResponse?.data?.turnId ?? 
-                 turnResponse?.data?.id ?? 
-                 null;
-        
-        console.log("=== EXTRACTED INTERVIEW TURN ID ===");
-        console.log("InterviewTurnId:", turnId);
-        console.log("InterviewTurnId type:", typeof turnId);
-      } catch (saveTurnError) {
-        console.error("=== SAVE TURN ERROR ===");
-        console.error("Error:", saveTurnError);
-        console.error("Error status:", saveTurnError.response?.status);
-        console.error("Error statusText:", saveTurnError.response?.statusText);
-        
-        // Log full error response (ProblemDetails/validation)
-        const errorData = saveTurnError.response?.data;
-        console.error("Error response?.data (full):", JSON.stringify(errorData, null, 2));
-        console.error("Error response?.data (raw):", errorData);
-        
-        // Parse error message
-        let errorMessage = "Failed to save turn";
-        let errorCode = null;
-        if (errorData?.error?.message) {
-          errorMessage = errorData.error.message;
-          errorCode = errorData.error.code;
-        } else if (errorData?.message) {
-          errorMessage = errorData.message;
-        } else if (errorData?.detail) {
-          errorMessage = errorData.detail;
-        } else if (errorData?.title) {
-          errorMessage = errorData.title;
-        } else if (errorData?.errors) {
-          // Format validation errors
-          const validationErrors = Object.entries(errorData.errors)
-            .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(", ") : messages}`)
-            .join(" | ");
-          errorMessage = `Validation failed: ${validationErrors}`;
-        } else if (typeof errorData === "string") {
-          errorMessage = errorData;
-        }
-        
-        console.error("Parsed error message:", errorMessage);
-        console.error("Error code:", errorCode);
-        
-        // Handle "WRONG_TURN" or "Turn index does not match" - turn đã tồn tại, skip save-turn
-        if (errorCode === "WRONG_TURN" || 
-            errorMessage?.toLowerCase().includes("turn index does not match") ||
-            errorMessage?.toLowerCase().includes("wrong_turn")) {
-          console.warn("=== TURN ALREADY EXISTS ===");
-          console.warn("Turn với TurnIndex", turnIndex, "đã tồn tại. Skip save-turn và tiếp tục với save-answer.");
-          // Turn đã tồn tại, tiếp tục flow mà không throw error
-          // turnId sẽ được lấy từ BE detail nếu cần
-        } else {
-          // Các lỗi khác, throw để dừng flow
-          throw new Error(`Save turn failed: ${errorMessage}`);
-        }
-      }
+      // Pipeline Step 4 + 5: Save TURN/ANSWER to DB (skip when running FE local demo)
+      if (!useLocalDemoMode) {
+        console.log("=== STEP 4: Saving TURN to DB ===");
+        const turnIndex = stateSnapshot.turnIndex;
 
-      // Check if request was aborted
-      if (abortController.signal.aborted || currentRequestId !== requestIdRef.current) {
-        console.log("=== SUBMIT ABORTED: Request was cancelled or outdated ===");
-        return;
-      }
-      
-      // Pipeline Step 5: Save ANSWER to DB -> get InterviewAnswerId (C.5)
-      console.log("=== STEP 5: Saving ANSWER to DB ===");
-      const turnIdStr = turnId ? String(turnId) : null;
-      const isAnswerAlreadySaved = turnIdStr && savedAnswerTurnIds.has(turnIdStr);
-      
-      // Store InterviewAnswerId in outer scope to use for save-evaluation
-      let interviewAnswerId = null;
-      
-      if (isAnswerAlreadySaved) {
-        console.log("=== ANSWER ALREADY SAVED ===");
-        console.log("InterviewTurnId:", turnIdStr, "already in savedAnswerTurnIds");
-        console.log("Skipping save-answer, proceeding directly to AI submit");
-        
-        // Try to get InterviewAnswerId from mapping if answer was already saved
-        if (turnIdStr) {
-          interviewAnswerId = turnIdToAnswerIdMap.get(turnIdStr) ?? null;
-          if (interviewAnswerId) {
-            console.log("=== RETRIEVED EXISTING ANSWER ID FROM MAPPING ===");
-            console.log("InterviewAnswerId:", interviewAnswerId);
-          }
-        }
-      } else {
-        // Validate InterviewTurnId exists before proceeding
-        if (!turnId || typeof turnId !== 'string' || turnId.trim() === '') {
-          throw new Error('InterviewTurnId is required. Please try again.');
-        }
-        
-        // Build payload according to backend DTO: SaveInterviewAnswerDto
-        // Required: InterviewSessionId (Guid), InterviewTurnId (Guid), UserAnswer (string), TurnIndex (int)
-        const saveAnswerPayload = {
-          InterviewSessionId: String(sessionId), // Guid (string) - Required
-          InterviewTurnId: String(turnId), // Guid (string) - Required
-          UserAnswer: finalTranscriptText, // string - Required (uses finalTranscriptText, may be fallback)
-          TurnIndex: Number(turnIndex), // int - Required, must be > 0
+        const interviewSessionIdStr = String(sessionId);
+        const saveTurnPayload = {
+          InterviewSessionId: interviewSessionIdStr,
+          TurnIndex: Number(turnIndex),
+          QuestionText: stateSnapshot.currentQuestion.text || "",
+          Difficulty: stateSnapshot.currentQuestion.difficulty || "intermediate",
+          QuestionId: stateSnapshot.currentQuestion.id
+            ? String(stateSnapshot.currentQuestion.id)
+            : undefined,
         };
-        
-        // Debug log
-        // Debug log - show REAL transcript being saved
-        console.log("=== SAVE ANSWER WITH REAL TRANSCRIPT ===");
-        console.log("SAVE ANSWER payload:", JSON.stringify(saveAnswerPayload, null, 2));
-        console.log("REAL UserAnswer length:", saveAnswerPayload.UserAnswer.length);
-        console.log("REAL UserAnswer text:", saveAnswerPayload.UserAnswer);
-        console.log("REAL UserAnswer preview:", saveAnswerPayload.UserAnswer.substring(0, 100) + (saveAnswerPayload.UserAnswer.length > 100 ? '...' : ''));
-        console.log("SAVE ANSWER InterviewTurnId:", saveAnswerPayload.InterviewTurnId);
-        
-        let answerResponse;
+
+        if (!saveTurnPayload.QuestionId) {
+          delete saveTurnPayload.QuestionId;
+        }
+
+        let turnResponse;
+        let turnId = null;
         try {
-          answerResponse = await interviewAnswerAPI.saveAnswer(saveAnswerPayload);
-          
-          // Extract InterviewAnswerId from response (response.data.data)
-          // Store in outer scope variable to use directly for save-evaluation (fix stale state issue)
-          interviewAnswerId = answerResponse?.data?.data ?? 
-                             answerResponse?.data?.answerId ?? 
-                             answerResponse?.data?.id ?? 
-                             null;
-          
-          console.log("=== EXTRACTED INTERVIEW ANSWER ID (LOCAL VARIABLE) ===");
-          console.log("InterviewAnswerId:", interviewAnswerId);
-          console.log("InterviewAnswerId type:", typeof interviewAnswerId);
-          console.log("From InterviewTurnId:", turnIdStr);
-          console.log("Will be used directly for save-evaluation (not from state)");
-          
-          // Store mapping: InterviewTurnId -> InterviewAnswerId (for future reference)
-          if (interviewAnswerId && turnIdStr) {
-            setTurnIdToAnswerIdMap(prev => {
-              const newMap = new Map(prev);
-              newMap.set(turnIdStr, String(interviewAnswerId));
-              console.log("=== STORED TURN ID -> ANSWER ID MAPPING ===");
-              console.log("Mapping:", { turnId: turnIdStr, answerId: String(interviewAnswerId) });
-              console.log("Current map size:", newMap.size);
-              return newMap;
-            });
+          turnResponse = await interviewTurnAPI.saveTurn(saveTurnPayload);
+          turnId =
+            turnResponse?.data?.data ??
+            turnResponse?.data?.turnId ??
+            turnResponse?.data?.id ??
+            null;
+        } catch (saveTurnError) {
+          const errorData = saveTurnError.response?.data;
+          let errorMessage = "Failed to save turn";
+          let errorCode = null;
+          if (errorData?.error?.message) {
+            errorMessage = errorData.error.message;
+            errorCode = errorData.error.code;
+          } else if (errorData?.message) {
+            errorMessage = errorData.message;
+          } else if (errorData?.detail) {
+            errorMessage = errorData.detail;
+          } else if (errorData?.title) {
+            errorMessage = errorData.title;
           }
-          
-          // Mark this turnId as saved to prevent duplicate calls
-          setSavedAnswerTurnIds(prev => new Set([...prev, turnIdStr]));
-          console.log("=== ANSWER SAVED - Added to savedAnswerTurnIds ===");
-          console.log("Saved turnIds:", Array.from(savedAnswerTurnIds).concat([turnIdStr]));
-          
-          if (import.meta.env.DEV) {
-            console.log("=== SAVE ANSWER SUCCESS ===");
-            console.log("Response status:", answerResponse.status);
-            console.log("Response data:", JSON.stringify(answerResponse.data, null, 2));
-          }
-        } catch (saveAnswerError) {
-          console.error("=== SAVE ANSWER ERROR ===");
-          console.error("Error status:", saveAnswerError.response?.status);
-          console.error("Error statusText:", saveAnswerError.response?.statusText);
-          
-          const errorData = saveAnswerError.response?.data;
-          const status = saveAnswerError.response?.status;
-          const errorCode = errorData?.error?.code;
-          const errorMessage = errorData?.error?.message ?? errorData?.message ?? errorData?.detail ?? "Failed to save answer";
-          
-          // Log error response (concise)
-          if (import.meta.env.DEV) {
-            console.error("Error response?.data:", JSON.stringify(errorData, null, 2));
-          }
-          
-          // Handle ANSWER_ALREADY_EXISTS - mark as saved and continue
-          if (status === 400 && (errorCode === "ANSWER_ALREADY_EXISTS" || errorMessage?.toLowerCase().includes("already exists"))) {
-            console.warn("=== ANSWER ALREADY EXISTS - Marking as saved ===");
-            console.warn("InterviewTurnId:", turnIdStr, "already exists in backend");
-            // Mark as saved to prevent retry
-            setSavedAnswerTurnIds(prev => new Set([...prev, turnIdStr]));
-            // Continue to AI submit (don't throw error)
+
+          if (
+            errorCode === "WRONG_TURN" ||
+            errorMessage?.toLowerCase().includes("turn index does not match") ||
+            errorMessage?.toLowerCase().includes("wrong_turn")
+          ) {
+            console.warn("Turn already exists, continue to save-answer.");
           } else {
-            // Other errors - throw to stop flow
-            let correlationId = errorData?.error?.correlationId ?? errorData?.correlationId;
-            
-            if (status === 400 || status === 404) {
-              if (correlationId && import.meta.env.DEV) {
-                console.error("Correlation ID:", correlationId);
-              }
-              throw new Error(errorMessage || `Bad request (${status})`);
-            } else if (status === 500) {
-              const friendlyMessage = "Server error occurred. Please try again later.";
-              if (correlationId) {
-                console.error("Correlation ID:", correlationId);
-                throw new Error(`${friendlyMessage} (Correlation ID: ${correlationId})`);
-              }
-              throw new Error(friendlyMessage);
+            throw new Error(`Save turn failed: ${errorMessage}`);
+          }
+        }
+
+        if (abortController.signal.aborted || currentRequestId !== requestIdRef.current) {
+          console.log("=== SUBMIT ABORTED: Request was cancelled or outdated ===");
+          return;
+        }
+
+        console.log("=== STEP 5: Saving ANSWER to DB ===");
+        const turnIdStr = turnId ? String(turnId) : null;
+        const isAnswerAlreadySaved = turnIdStr && savedAnswerTurnIds.has(turnIdStr);
+
+        if (!isAnswerAlreadySaved) {
+          if (!turnId || typeof turnId !== "string" || turnId.trim() === "") {
+            throw new Error("InterviewTurnId is required. Please try again.");
+          }
+
+          const saveAnswerPayload = {
+            InterviewSessionId: String(sessionId),
+            InterviewTurnId: String(turnId),
+            UserAnswer: finalTranscriptText,
+            TurnIndex: Number(turnIndex),
+          };
+
+          try {
+            const answerResponse = await interviewAnswerAPI.saveAnswer(saveAnswerPayload);
+            const interviewAnswerId =
+              answerResponse?.data?.data ??
+              answerResponse?.data?.answerId ??
+              answerResponse?.data?.id ??
+              null;
+
+            if (interviewAnswerId && turnIdStr) {
+              setTurnIdToAnswerIdMap((prev) => {
+                const newMap = new Map(prev);
+                newMap.set(turnIdStr, String(interviewAnswerId));
+                return newMap;
+              });
+            }
+
+            setSavedAnswerTurnIds((prev) => new Set([...prev, turnIdStr]));
+          } catch (saveAnswerError) {
+            const errorData = saveAnswerError.response?.data;
+            const status = saveAnswerError.response?.status;
+            const errorCode = errorData?.error?.code;
+            const errorMessage =
+              errorData?.error?.message ??
+              errorData?.message ??
+              errorData?.detail ??
+              "Failed to save answer";
+
+            if (
+              status === 400 &&
+              (errorCode === "ANSWER_ALREADY_EXISTS" ||
+                errorMessage?.toLowerCase().includes("already exists"))
+            ) {
+              setSavedAnswerTurnIds((prev) => new Set([...prev, turnIdStr]));
             } else {
               throw new Error(errorMessage || `Request failed (${status})`);
             }
           }
         }
+      } else {
+        console.log("=== LOCAL DEMO MODE: Skipping save-turn/save-answer backend calls ===");
       }
 
       // Check if request was aborted
@@ -1288,25 +1127,16 @@ const InterviewSession = () => {
         
         setIsAnswerProcessing(false);
         setIsSubmitting(false);
+        const sessionIdStr = String(sessionId);
         
         try {
-          // End interview session
-          console.log("=== ENDING INTERVIEW SESSION ===");
-          console.log("sessionId (raw):", sessionId);
-          console.log("sessionId (type):", typeof sessionId);
-          const sessionIdStr = String(sessionId);
-          console.log("sessionId (string):", sessionIdStr);
-          
-          if (!sessionId || sessionIdStr === 'undefined' || sessionIdStr === 'null') {
-            throw new Error('Invalid sessionId. Cannot end interview.');
+          if (!useLocalDemoMode) {
+            await interviewSessionAPI.end(sessionIdStr);
+          } else {
+            console.log("=== LOCAL DEMO MODE: Skipping end-interview backend call ===");
           }
-          
-          await interviewSessionAPI.end(sessionIdStr);
-          console.log("=== INTERVIEW SESSION ENDED SUCCESSFULLY ===");
-          
-          toast('Cuộc phỏng vấn đã hoàn thành!', { type: 'success' });
-          
-          // Navigate to summary page
+
+          toast("Cuá»™c phá»ng váº¥n Ä‘Ã£ hoÃ n thÃ nh!", { type: "success" });
           setTimeout(() => {
             navigate(`/interview/${sessionIdStr}/summary`);
           }, 100);
@@ -1319,7 +1149,7 @@ const InterviewSession = () => {
           console.error("Error message:", error.message);
           
           // Even if end-interview failed, navigate to summary (interview might already be ended)
-          toast('Cuộc phỏng vấn đã hoàn thành!', { type: 'success' });
+          toast('Cuá»™c phá»ng váº¥n Ä‘Ã£ hoÃ n thÃ nh!', { type: 'success' });
           setTimeout(() => {
             navigate(`/interview/${sessionIdStr}/summary`);
           }, 100);
@@ -1570,7 +1400,7 @@ const InterviewSession = () => {
       console.error('Failed to submit answer:', error);
       
       // Extract error message
-      const errorMessage = error?.message || 'Gửi câu trả lời thất bại. Thử lại.';
+      const errorMessage = error?.message || 'Gá»­i cÃ¢u tráº£ lá»i tháº¥t báº¡i. Thá»­ láº¡i.';
       
       // Set error state
       setError(errorMessage);
@@ -1655,7 +1485,7 @@ const InterviewSession = () => {
     if (!nextQuestionId || (typeof nextQuestionId === 'string' && nextQuestionId.trim() === '')) {
       console.error("=== COMMIT NEXT QUESTION ERROR: nextQuestionId is missing ===");
       console.error("pendingNextData:", pendingNextData);
-      toast('Không tìm thấy câu hỏi tiếp theo. Vui lòng thử lại.', { type: 'error' });
+      toast('KhÃ´ng tÃ¬m tháº¥y cÃ¢u há»i tiáº¿p theo. Vui lÃ²ng thá»­ láº¡i.', { type: 'error' });
       return false;
     }
     
@@ -1829,12 +1659,16 @@ const InterviewSession = () => {
         }
       }
       
-      await interviewSessionAPI.end(sessionIdStr);
+      if (!isLocalDemoSession) {
+        await interviewSessionAPI.end(sessionIdStr);
+      } else {
+        console.log("=== LOCAL DEMO MODE: Skipping complete-interview backend call ===");
+      }
 
       // Cancel any ongoing audio before ending interview
       stopAudioBase64();
 
-      toast('Cuộc phỏng vấn đã hoàn thành!', { type: 'success' });
+      toast('Cuá»™c phá»ng váº¥n Ä‘Ã£ hoÃ n thÃ nh!', { type: 'success' });
 
       // Navigate to summary page
       navigate(`/interview/${sessionIdStr}/summary`);
@@ -1864,7 +1698,7 @@ const InterviewSession = () => {
       }
       
       // Navigate to summary even if API end failed (Summary will handle empty state)
-      toast('Cuộc phỏng vấn đã hoàn thành!', { type: 'success' });
+      toast('Cuá»™c phá»ng váº¥n Ä‘Ã£ hoÃ n thÃ nh!', { type: 'success' });
       navigate(`/interview/${sessionIdStr}/summary`);
     }
   };
@@ -1916,7 +1750,7 @@ const InterviewSession = () => {
       return { turns: [] };
     }
     
-    // Extract turns/evaluations: có thể nằm trong turns/interviewTurns/items/evaluations
+    // Extract turns/evaluations: cÃ³ thá»ƒ náº±m trong turns/interviewTurns/items/evaluations
     const turns = Array.isArray(detail.turns)
       ? detail.turns
       : Array.isArray(detail.interviewTurns)
@@ -2120,7 +1954,7 @@ const InterviewSession = () => {
       <div className="min-h-screen bg-[#0B0C10] flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-[#66FCF1] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-[#C5C6C7]">Đang tải interview...</p>
+          <p className="text-[#C5C6C7]">Äang táº£i interview...</p>
         </div>
       </div>
     );
@@ -2141,11 +1975,11 @@ const InterviewSession = () => {
               </h1>
               <div className="hidden sm:flex items-center gap-2 text-sm text-[#C5C6C7]">
                 <span>Turn {turnState.turnIndex}</span>
-                <span className="text-[#66FCF1]">•</span>
+                <span className="text-[#66FCF1]">â€¢</span>
                 <span>{interviewContext.jobTitle || 'Interview'}</span>
                 {turnState.currentQuestion?.topic && (
                   <>
-                    <span className="text-[#66FCF1]">•</span>
+                    <span className="text-[#66FCF1]">â€¢</span>
                     <span>{turnState.currentQuestion.topic}</span>
                   </>
                 )}
@@ -2167,7 +2001,7 @@ const InterviewSession = () => {
                <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0B0C10]/80 border border-[#66FCF1]/20">
                  <Clock className="w-4 h-4 text-[#66FCF1]" />
                  <span className="text-xs font-mono text-[#C5C6C7]">
-                  {(phase === 'showing_feedback' || phase === 'showing_transition') ? 'Chờ câu hỏi tiếp theo...' : 'Còn '}
+                  {(phase === 'showing_feedback' || phase === 'showing_transition') ? 'Chá» cÃ¢u há»i tiáº¿p theo...' : 'CÃ²n '}
                   {phase !== 'showing_feedback' && phase !== 'showing_transition' && (
                      <span className="text-[#66FCF1] ml-1">
                        {formatTime(questionTimeLeft)}
@@ -2193,7 +2027,7 @@ const InterviewSession = () => {
                 className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
               >
                 <X className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Kết thúc</span>
+                <span className="hidden sm:inline">Káº¿t thÃºc</span>
               </Button>
             </div>
           </div>
@@ -2215,7 +2049,7 @@ const InterviewSession = () => {
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-center gap-2">
               <Clock className="w-4 h-4 text-[#66FCF1]" />
               <span className="text-sm text-[#C5C6C7]">
-                Thời gian trả lời còn lại:&nbsp;
+                Thá»i gian tráº£ lá»i cÃ²n láº¡i:&nbsp;
                 <span className="font-mono text-[#66FCF1]">
                   {formatTime(questionTimeLeft)}
                 </span>
@@ -2260,25 +2094,25 @@ const InterviewSession = () => {
               {phase === 'showing_feedback' ? (
                 <div className="flex items-center gap-2 text-[#66FCF1]">
                   <CheckCircle className="w-5 h-5" />
-                  <span className="text-sm font-medium">Đánh giá đã hoàn tất</span>
+                  <span className="text-sm font-medium">ÄÃ¡nh giÃ¡ Ä‘Ã£ hoÃ n táº¥t</span>
                 </div>
               ) : phase === 'asking' && recordingState === 'recording' ? (
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-                  <span className="text-sm font-medium text-red-400">Đang ghi âm...</span>
+                  <span className="text-sm font-medium text-red-400">Äang ghi Ã¢m...</span>
                   <span className="text-sm font-mono text-[#C5C6C7]">{formatTime(recordingTime)}</span>
                 </div>
               ) : recordingState === 'stopped' && recordedAudioBlob ? (
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-5 h-5 text-[#45A29E]" />
                   <span className="text-sm font-medium text-[#45A29E]">
-                    {isTranscribing ? "Đang chuyển đổi giọng nói..." : "Đã ghi âm - Sẵn sàng gửi"}
+                    {isTranscribing ? "Äang chuyá»ƒn Ä‘á»•i giá»ng nÃ³i..." : "ÄÃ£ ghi Ã¢m - Sáºµn sÃ ng gá»­i"}
                   </span>
                 </div>
               ) : (
                 <div className="flex items-center gap-2 text-[#C5C6C7]">
                   <Clock className="w-4 h-4" />
-                  <span className="text-sm">Sẵn sàng ghi âm</span>
+                  <span className="text-sm">Sáºµn sÃ ng ghi Ã¢m</span>
                 </div>
               )}
             </div>
@@ -2289,7 +2123,7 @@ const InterviewSession = () => {
                 // Show "Moving to next question..." during transition (auto-advancing)
                 <div className="flex items-center gap-2 text-[#C5C6C7]">
                   <div className="w-5 h-5 border-2 border-[#66FCF1] border-t-transparent rounded-full animate-spin" />
-                  <span className="text-sm">Đang chuyển sang câu tiếp theo...</span>
+                  <span className="text-sm">Äang chuyá»ƒn sang cÃ¢u tiáº¿p theo...</span>
                 </div>
               ) : phase === 'showing_feedback' ? (
                 // Show "Next question" button when showing feedback (legacy)
@@ -2302,12 +2136,12 @@ const InterviewSession = () => {
                 >
                   {pendingNext?.is_end_of_interview ? (
                     <>
-                      Hoàn thành
+                      HoÃ n thÃ nh
                       <CheckCircle className="w-5 h-5 ml-2" />
                     </>
                   ) : (
                     <>
-                      Câu hỏi tiếp theo
+                      CÃ¢u há»i tiáº¿p theo
                       <ArrowRight className="w-5 h-5 ml-2" />
                     </>
                   )}
@@ -2322,7 +2156,7 @@ const InterviewSession = () => {
                   className="px-8 py-6 text-lg glow-primary-hover"
                 >
                   <Mic className="w-5 h-5 mr-2" />
-                  Bắt đầu ghi âm
+                  Báº¯t Ä‘áº§u ghi Ã¢m
                 </Button>
               ) : phase === 'asking' && recordingState === 'recording' ? (
                 // Show "Stop recording" button when recording
@@ -2334,7 +2168,7 @@ const InterviewSession = () => {
                   className="px-8 py-6 text-lg"
                 >
                   <Square className="w-5 h-5 mr-2" />
-                  Dừng ghi âm
+                  Dá»«ng ghi Ã¢m
                 </Button>
               ) : phase === 'asking' && recordingState === 'stopped' ? (
                 // Show "Re-record" and "Submit" buttons when recording stopped
@@ -2346,7 +2180,7 @@ const InterviewSession = () => {
                     disabled={isAnswerProcessing || isTranscribing || isSubmitting || phase === 'showing_feedback' || phase === 'showing_transition'}
                     className="px-6 py-6 text-lg border-[#66FCF1]/30 text-[#66FCF1] hover:bg-[#66FCF1]/10"
                   >
-                    Ghi lại
+                    Ghi láº¡i
                   </Button>
                   <Button
                     variant="primary"
@@ -2366,16 +2200,16 @@ const InterviewSession = () => {
                     {isTranscribing ? (
                       <>
                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                        Đang chuyển đổi...
+                        Äang chuyá»ƒn Ä‘á»•i...
                       </>
                     ) : isSubmitting ? (
                       <>
                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                        Đang gửi...
+                        Äang gá»­i...
                       </>
                     ) : (
                       <>
-                        Gửi câu trả lời
+                        Gá»­i cÃ¢u tráº£ lá»i
                         <ArrowRight className="w-5 h-5 ml-2" />
                       </>
                     )}
@@ -2391,12 +2225,12 @@ const InterviewSession = () => {
       <Modal
         isOpen={showEndModal}
         onClose={() => setShowEndModal(false)}
-        title="Kết thúc cuộc phỏng vấn sớm?"
+        title="Káº¿t thÃºc cuá»™c phá»ng váº¥n sá»›m?"
         size="md"
       >
         <div className="space-y-4">
           <p className="text-[#C5C6C7]">
-            Bạn có chắc chắn muốn kết thúc cuộc phỏng vấn này? Tiến trình của bạn sẽ được lưu, nhưng bạn sẽ không thể trả lời các câu hỏi còn lại.
+            Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n káº¿t thÃºc cuá»™c phá»ng váº¥n nÃ y? Tiáº¿n trÃ¬nh cá»§a báº¡n sáº½ Ä‘Æ°á»£c lÆ°u, nhÆ°ng báº¡n sáº½ khÃ´ng thá»ƒ tráº£ lá»i cÃ¡c cÃ¢u há»i cÃ²n láº¡i.
           </p>
           <div className="flex gap-3 justify-end">
             <Button
@@ -2404,7 +2238,7 @@ const InterviewSession = () => {
               onClick={() => setShowEndModal(false)}
               className="border-[#66FCF1]/30 text-[#66FCF1] hover:bg-[#66FCF1]/10"
             >
-              Tiếp tục
+              Tiáº¿p tá»¥c
             </Button>
             <Button
               variant="danger"
@@ -2413,7 +2247,7 @@ const InterviewSession = () => {
                 handleCompleteInterview();
               }}
             >
-              Kết thúc
+              Káº¿t thÃºc
             </Button>
           </div>
         </div>
@@ -2423,3 +2257,4 @@ const InterviewSession = () => {
 };
 
 export default InterviewSession;
+

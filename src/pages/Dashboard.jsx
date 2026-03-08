@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Video,
   CheckCircle,
   Clock,
-  TrendingUp,
   Calendar,
   BarChart3,
   AlertCircle,
@@ -18,19 +17,18 @@ import {
   CardContent,
 } from "../components/ui/Card";
 import Button from "../components/ui/Button";
-import { useUsageLimit } from "../hooks/useUsageLimit";
-import { interviewSessionAPI } from "../services/api"; // ✅ dùng API thật
+import { useUserPlan } from "../hooks/useUserPlan";
+import { interviewSessionAPI } from "../services/api";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { usage, hasReachedLimit, getRemainingInterviews } = useUsageLimit();
+  const { plan, hasReachedLimit, getRemainingInterviews } = useUserPlan();
 
   const [recentInterviews, setRecentInterviews] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
   useEffect(() => {
-    fetchDashboardData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    void fetchDashboardData();
   }, []);
 
   const fetchDashboardData = async () => {
@@ -38,7 +36,6 @@ const Dashboard = () => {
       setLoadingHistory(true);
       const res = await interviewSessionAPI.history();
 
-      // backend có thể trả { data: [...] } hoặc { data: { items: [...] } } hoặc trực tiếp [...]
       const payload = res.data?.data ?? res.data;
       const list =
         Array.isArray(payload) ? payload : payload?.items ?? payload?.results ?? [];
@@ -52,11 +49,9 @@ const Dashboard = () => {
     }
   };
 
-  // ✅ Tính stats từ recentInterviews (không cần dashboardAPI)
   const stats = useMemo(() => {
     const total = recentInterviews.length;
 
-    // tùy backend đặt field status: "completed" | "ended" | ...
     const completed = recentInterviews.filter((x) => {
       const s = (x.status ?? x.state ?? "").toString().toLowerCase();
       return s.includes("complete") || s.includes("end") || s === "done";
@@ -65,35 +60,16 @@ const Dashboard = () => {
     return {
       totalInterviews: total,
       completedInterviews: completed,
-      remainingQuota: usage ? getRemainingInterviews() : 0,
+      remainingQuota: plan === "PRO" ? "∞" : getRemainingInterviews(),
     };
-  }, [recentInterviews, usage, getRemainingInterviews]);
+  }, [getRemainingInterviews, plan, recentInterviews]);
 
   const statCards = [
-    {
-      title: "Tổng số phỏng vấn",
-      value: stats.totalInterviews,
-      icon: Video,
-      bgColor: "bg-blue-50",
-      textColor: "text-blue-600",
-    },
-    {
-      title: "Đã hoàn thành",
-      value: stats.completedInterviews,
-      icon: CheckCircle,
-      bgColor: "bg-green-50",
-      textColor: "text-green-600",
-    },
-    {
-      title: "Hạn mức còn lại",
-      value: stats.remainingQuota,
-      icon: Clock,
-      bgColor: "bg-yellow-50",
-      textColor: "text-yellow-600",
-    },
+    { title: "Tổng số phỏng vấn", value: stats.totalInterviews, icon: Video, tone: "blue" },
+    { title: "Đã hoàn thành", value: stats.completedInterviews, icon: CheckCircle, tone: "green" },
+    { title: "Hạn mức còn lại", value: stats.remainingQuota, icon: Clock, tone: "yellow" },
   ];
 
-  // ✅ Chuẩn hóa hiển thị date (fallback nếu backend trả createdAt/startTime)
   const formatDate = (item) => {
     const raw = item.date ?? item.createdAt ?? item.startTime ?? item.createdDate;
     if (!raw) return "-";
@@ -106,17 +82,14 @@ const Dashboard = () => {
     }
   };
 
-  // ✅ Chuẩn hóa position/title
   const getPosition = (item) =>
     item.position ?? item.jobTitle ?? item.jobName ?? item.jobDescriptionTitle ?? "Interview";
 
-  // ✅ Chuẩn hóa id/sessionId
   const getSessionId = (item) => item.sessionId ?? item.interviewSessionId ?? item.id;
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 max-w-7xl mx-auto space-y-6 sm:space-y-8">
-      {/* Usage Limit Warning Banner */}
-      {hasReachedLimit && (
+      {plan === "FREE" && hasReachedLimit() && (
         <Card className="border-2 border-red-500/30 bg-gradient-to-r from-red-900/40 to-red-800/30 backdrop-blur-sm">
           <CardContent className="p-6">
             <div className="flex items-start gap-4">
@@ -124,12 +97,9 @@ const Dashboard = () => {
                 <AlertCircle className="w-6 h-6 text-red-400" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-white text-lg mb-2">
-                  Đã đạt giới hạn phỏng vấn
-                </h3>
+                <h3 className="font-semibold text-white text-lg mb-2">Đã đạt giới hạn phỏng vấn</h3>
                 <p className="text-white/80 mb-4">
-                  Bạn đã sử dụng hết {usage?.total} lượt phỏng vấn trong gói hiện tại.
-                  Nâng cấp để tiếp tục luyện tập và cải thiện kỹ năng.
+                  Bạn đã sử dụng hết lượt phỏng vấn miễn phí trong gói hiện tại. Nâng cấp để tiếp tục luyện tập.
                 </p>
                 <Button
                   variant="danger"
@@ -145,19 +115,22 @@ const Dashboard = () => {
         </Card>
       )}
 
-      {/* Low Usage Warning */}
-      {!hasReachedLimit && usage && getRemainingInterviews() <= 2 && (
+      {plan === "FREE" && !hasReachedLimit() && getRemainingInterviews() <= 1 && (
         <Card className="border-2 border-yellow-500/30 bg-gradient-to-r from-yellow-900/40 to-yellow-800/30 backdrop-blur-sm">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <AlertCircle className="w-5 h-5 text-yellow-400" />
               <div className="flex-1">
                 <p className="text-white font-medium">
-                  Chỉ còn {getRemainingInterviews()} lượt phỏng vấn. Hãy cân nhắc nâng cấp để
-                  tiếp tục không bị gián đoạn.
+                  Chỉ còn {getRemainingInterviews()} lượt phỏng vấn. Hãy cân nhắc nâng cấp để tiếp tục không bị gián đoạn.
                 </p>
               </div>
-              <Button variant="outline" size="sm" onClick={() => navigate("/payment")} className="border-white/20 text-white hover:bg-white/10">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/payment")}
+                className="border-white/20 text-white hover:bg-white/10"
+              >
                 Xem gói
               </Button>
             </div>
@@ -165,7 +138,6 @@ const Dashboard = () => {
         </Card>
       )}
 
-      {/* Page Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-2">
         <div>
           <h1 className="text-3xl font-bold text-white">Bảng điều khiển</h1>
@@ -174,7 +146,7 @@ const Dashboard = () => {
         <Button
           variant="primary"
           onClick={() => navigate("/interview")}
-          disabled={hasReachedLimit}
+          disabled={plan === "FREE" && hasReachedLimit()}
           className="flex items-center gap-2"
         >
           <Video className="w-5 h-5" />
@@ -182,18 +154,16 @@ const Dashboard = () => {
         </Button>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
         {statCards.map((stat, index) => {
           const Icon = stat.icon;
           const colorMap = {
-            blue: { bg: 'from-blue-600/20 to-blue-500/10', border: 'border-blue-500/30', icon: 'text-blue-400', iconBg: 'bg-blue-500/20' },
-            green: { bg: 'from-green-600/20 to-green-500/10', border: 'border-green-500/30', icon: 'text-green-400', iconBg: 'bg-green-500/20' },
-            indigo: { bg: 'from-indigo-600/20 to-indigo-500/10', border: 'border-indigo-500/30', icon: 'text-indigo-400', iconBg: 'bg-indigo-500/20' },
-            yellow: { bg: 'from-yellow-600/20 to-yellow-500/10', border: 'border-yellow-500/30', icon: 'text-yellow-400', iconBg: 'bg-yellow-500/20' },
+            blue: { bg: "from-blue-600/20 to-blue-500/10", border: "border-blue-500/30", icon: "text-blue-400", iconBg: "bg-blue-500/20" },
+            green: { bg: "from-green-600/20 to-green-500/10", border: "border-green-500/30", icon: "text-green-400", iconBg: "bg-green-500/20" },
+            yellow: { bg: "from-yellow-600/20 to-yellow-500/10", border: "border-yellow-500/30", icon: "text-yellow-400", iconBg: "bg-yellow-500/20" },
           };
-          const colors = colorMap[stat.title === 'Tổng số phỏng vấn' ? 'blue' : stat.title === 'Đã hoàn thành' ? 'green' : 'yellow'];
-          
+          const colors = colorMap[stat.tone];
+
           return (
             <Card key={index} className={`hover:shadow-2xl hover:scale-105 transition-all duration-300 bg-gradient-to-br ${colors.bg} border ${colors.border} backdrop-blur-sm`}>
               <CardContent className="p-6">
@@ -212,7 +182,6 @@ const Dashboard = () => {
         })}
       </div>
 
-      {/* Recent Interviews */}
       <Card className="bg-[#1F2833]/50 border border-[#66FCF1]/20 backdrop-blur-sm">
         <CardHeader className="flex flex-row items-center justify-between border-b border-white/10">
           <div>
@@ -235,25 +204,16 @@ const Dashboard = () => {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-white/10">
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-white">
-                      Vị trí
-                    </th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-white">
-                      Ngày
-                    </th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-white">
-                      Trạng thái
-                    </th>
-                    <th className="text-right py-3 px-4 text-sm font-semibold text-white">
-                      Hành động
-                    </th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-white">Vị trí</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-white">Ngày</th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-white">Trạng thái</th>
+                    <th className="text-right py-3 px-4 text-sm font-semibold text-white">Hành động</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {recentInterviews.slice(0, 5).map((interview, idx) => {
+                  {recentInterviews.slice(0, 5).map((interview) => {
                     const sessionId = getSessionId(interview);
-                    // Ensure sessionId is a valid string (Guid), skip if missing
-                    if (!sessionId || typeof sessionId !== 'string') {
+                    if (!sessionId || typeof sessionId !== "string") {
                       return null;
                     }
                     const position = getPosition(interview);
@@ -307,7 +267,6 @@ const Dashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         <Card className="hover:shadow-2xl hover:scale-105 transition-all duration-300 bg-gradient-to-br from-indigo-600/20 to-indigo-500/10 border-2 border-indigo-500/30 backdrop-blur-sm">
           <CardContent className="p-6">

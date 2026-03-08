@@ -41,7 +41,7 @@ export const authAPI = {
         const user = JSON.parse(userStr);
         userEmail = user?.email;
       }
-    } catch (e) {
+    } catch {
       // Ignore parse errors
     }
     
@@ -141,6 +141,36 @@ export const aiInterviewAPI = {
 
 /** ===== USER ===== */
 export const userAPI = {
+  getCurrentProfile: async () => {
+    const candidateEndpoints = [
+      "/User/me",
+      "/User/profile",
+      "/User/current",
+      "/Auth/me",
+    ];
+
+    let lastError = null;
+
+    for (const endpoint of candidateEndpoints) {
+      try {
+        return await api.get(endpoint);
+      } catch (error) {
+        lastError = error;
+        const status = error?.response?.status;
+        if (status === 404) continue;
+        throw error;
+      }
+    }
+
+    if (lastError?.response?.status === 404) {
+      const endpointError = new Error("PROFILE_ENDPOINT_NOT_FOUND");
+      endpointError.code = "PROFILE_ENDPOINT_NOT_FOUND";
+      throw endpointError;
+    }
+
+    if (lastError) throw lastError;
+    throw new Error("No profile endpoint available");
+  },
   updateProfile: (dto) => api.put("/User/update-profile", dto),
   changePassword: (dto) => api.put("/User/change-password", dto),
 };

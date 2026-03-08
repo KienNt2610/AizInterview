@@ -1,312 +1,250 @@
 import { useState, useEffect, useCallback } from "react";
+import { userAPI } from "../services/api";
+import { PLAN, resolvePlanFromData } from "../utils/plan";
 
 const FREE_LIMIT = 1;
 const STORAGE_KEY_PLAN = "userPlan";
 const STORAGE_KEY_INTERVIEW_COUNT = "interviewCount";
-const STORAGE_KEY_USER_EMAIL = "userPlanEmail"; // Store email associated with plan
+const STORAGE_KEY_USER_EMAIL = "userPlanEmail";
+const STORAGE_KEY_PROFILE_ENDPOINT_UNAVAILABLE = "profileEndpointUnavailable";
 
-/**
- * Hook to manage user plan (FREE/PRO) and interview count
- * - Default: plan="FREE", interviewCount=0
- * - FREE users: max 1 interview (1 free trial)
- * - PRO users: unlimited interviews
- * - When user logs in again (if not PRO), reset to FREE with 0 interviews (1 free trial)
- */
+let hasCheckedProfileEndpoint = false;
+
+const getCurrentUserEmail = () => {
+  try {
+    const currentUser = localStorage.getItem("user");
+    if (!currentUser) return null;
+    const userObj = JSON.parse(currentUser);
+    return userObj?.email || null;
+  } catch {
+    return null;
+  }
+};
+
+const normalizeInterviewCount = (count) => {
+  const parsed = Number.parseInt(count ?? "0", 10);
+  if (Number.isNaN(parsed) || parsed < 0) return 0;
+  return parsed;
+};
+
 export const useUserPlan = () => {
-  const [plan, setPlan] = useState("FREE");
+  const [plan, setPlan] = useState(PLAN.FREE);
   const [interviewCount, setInterviewCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  // Load from localStorage on mount
   useEffect(() => {
     try {
+      const currentUserEmail = getCurrentUserEmail();
       const storedPlan = localStorage.getItem(STORAGE_KEY_PLAN);
       const storedCount = localStorage.getItem(STORAGE_KEY_INTERVIEW_COUNT);
-      
-      // Safely parse user from localStorage
-      let currentUserEmail = null;
-      try {
-        const currentUser = localStorage.getItem("user");
-        if (currentUser) {
-          const userObj = JSON.parse(currentUser);
-          currentUserEmail = userObj?.email || null;
-        }
-      } catch (e) {
-        // Invalid user data, ignore
-        console.warn("[useUserPlan] Failed to parse user from localStorage:", e);
-      }
-
-      // Check if plan data belongs to current user by checking if user exists
-      // If no user logged in, reset to defaults
-      if (!currentUserEmail) {
-        console.log("[useUserPlan] No user logged in, resetting to defaults");
-        setPlan("FREE");
-        setInterviewCount(0);
-        localStorage.setItem(STORAGE_KEY_PLAN, "FREE");
-        localStorage.setItem(STORAGE_KEY_INTERVIEW_COUNT, "0");
-        setLoading(false);
-        return;
-      }
-
-      // Check if email matches stored email
       const storedEmail = localStorage.getItem(STORAGE_KEY_USER_EMAIL);
-      const isDifferentEmail = storedEmail && storedEmail !== currentUserEmail;
-      
-      // If email changed, reset to defaults (new user)
-      if (isDifferentEmail) {
-        console.log("[useUserPlan] Email changed from", storedEmail, "to", currentUserEmail, "- resetting to defaults");
-        setPlan("FREE");
+
+      if (!currentUserEmail) {
+        setPlan(PLAN.FREE);
         setInterviewCount(0);
-        localStorage.setItem(STORAGE_KEY_PLAN, "FREE");
+        localStorage.setItem(STORAGE_KEY_PLAN, PLAN.FREE);
         localStorage.setItem(STORAGE_KEY_INTERVIEW_COUNT, "0");
-        localStorage.setItem(STORAGE_KEY_USER_EMAIL, currentUserEmail);
-        setLoading(false);
         return;
       }
-      
-      // If we have stored plan, use it
-      if (storedPlan === "PRO" || storedPlan === "FREE") {
-        setPlan(storedPlan);
-      } else {
-        // Default for new users
-        console.log("[useUserPlan] No stored plan found, defaulting to FREE");
-        setPlan("FREE");
-        localStorage.setItem(STORAGE_KEY_PLAN, "FREE");
+
+      if (storedEmail && storedEmail !== currentUserEmail) {
+        setPlan(PLAN.FREE);
+        setInterviewCount(0);
+        localStorage.setItem(STORAGE_KEY_PLAN, PLAN.FREE);
+        localStorage.setItem(STORAGE_KEY_INTERVIEW_COUNT, "0");
+        localStorage.setItem(STORAGE_KEY_USER_EMAIL, currentUserEmail);
+        return;
       }
 
-      let count = storedCount ? parseInt(storedCount, 10) : 0;
-      if (isNaN(count) || count < 0) {
-        count = 0;
-      }
-      
-      // CRITICAL: For FREE plan, count can be 0 (can start) or 1 (used up, blocked)
-      // Only reset if count > FREE_LIMIT (invalid state, should never happen)
-      if (storedPlan === "FREE" && count > FREE_LIMIT) {
-        console.warn("[useUserPlan] Invalid interviewCount detected:", count, "for FREE plan (should be 0-1), resetting to 0");
-        count = 0;
-        localStorage.setItem(STORAGE_KEY_INTERVIEW_COUNT, "0");
-      }
-      // If count === FREE_LIMIT (1), that's valid - user has used up their free interview
-      
-      // Store email if not already stored
-      if (!storedEmail && currentUserEmail) {
+      const nextPlan = storedPlan === PLAN.PRO ? PLAN.PRO : PLAN.FREE;
+      const count = normalizeInterviewCount(storedCount);
+      const boundedCount = nextPlan === PLAN.FREE ? Math.min(count, FREE_LIMIT) : count;
+
+      setPlan(nextPlan);
+      setInterviewCount(boundedCount);
+
+      localStorage.setItem(STORAGE_KEY_PLAN, nextPlan);
+      localStorage.setItem(STORAGE_KEY_INTERVIEW_COUNT, String(boundedCount));
+      if (!storedEmail) {
         localStorage.setItem(STORAGE_KEY_USER_EMAIL, currentUserEmail);
       }
-      
-      console.log("[useUserPlan] Loaded plan:", storedPlan || "FREE", "interviewCount:", count, "for user:", currentUserEmail);
-      setInterviewCount(count);
     } catch (error) {
       console.error("Failed to load user plan from localStorage:", error);
-      setPlan("FREE");
+      setPlan(PLAN.FREE);
       setInterviewCount(0);
-      // Reset localStorage on error
-      localStorage.setItem(STORAGE_KEY_PLAN, "FREE");
+      localStorage.setItem(STORAGE_KEY_PLAN, PLAN.FREE);
       localStorage.setItem(STORAGE_KEY_INTERVIEW_COUNT, "0");
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Listen for auth-change events (login/logout) to reset state
   useEffect(() => {
     const handleAuthChange = () => {
       const token = localStorage.getItem("token");
-      const currentUser = localStorage.getItem("user");
-      
       if (!token) {
-        // User logged out - keep plan data in localStorage for next login with same email
-        // Don't reset interviewCount, it will be preserved for same email
-        console.log("[useUserPlan] User logged out, keeping plan data in localStorage for next login");
-        // Just update state to FREE (but keep localStorage values)
-        setPlan("FREE");
-        // Don't reset interviewCount state - it will be loaded from localStorage on next login
-        // Don't clear localStorage - preserve for same email login
-      } else if (currentUser) {
-        // User logged in - check if email changed
-        try {
-          // Parse current user email
-          let currentUserEmail = null;
-          try {
-            const userObj = JSON.parse(currentUser);
-            currentUserEmail = userObj?.email || null;
-          } catch (e) {
-            console.warn("[useUserPlan] Failed to parse user from localStorage:", e);
-          }
-          
-          const storedPlan = localStorage.getItem(STORAGE_KEY_PLAN);
-          const storedEmail = localStorage.getItem(STORAGE_KEY_USER_EMAIL);
-          
-          // Check if this is a different email (new user or different account)
-          const isDifferentEmail = storedEmail && currentUserEmail && storedEmail !== currentUserEmail;
-          
-          if (storedPlan === "PRO") {
-            // PRO users keep their status regardless of email
-            const storedCount = localStorage.getItem(STORAGE_KEY_INTERVIEW_COUNT);
-            let count = storedCount ? parseInt(storedCount, 10) : 0;
-            if (isNaN(count) || count < 0) {
-              count = 0;
-            }
-            setPlan("PRO");
-            setInterviewCount(count);
-            // Update email if changed
-            if (isDifferentEmail) {
-              localStorage.setItem(STORAGE_KEY_USER_EMAIL, currentUserEmail);
-            }
-            console.log("[useUserPlan] Auth change: PRO user, keeping plan and count:", count);
-          } else {
-            // FREE users: only reset if email changed (different user)
-            if (isDifferentEmail) {
-              // Different email = new user, reset to 0 interviews (1 free trial)
-              console.log("[useUserPlan] Auth change: Different email detected, resetting to FREE with 0 interviews (1 free trial)");
-              setPlan("FREE");
-              setInterviewCount(0);
-              localStorage.setItem(STORAGE_KEY_PLAN, "FREE");
-              localStorage.setItem(STORAGE_KEY_INTERVIEW_COUNT, "0");
-              localStorage.setItem(STORAGE_KEY_USER_EMAIL, currentUserEmail);
-            } else {
-              // Same email = existing user, keep current state (including if they've used up their free interview)
-              const storedCount = localStorage.getItem(STORAGE_KEY_INTERVIEW_COUNT);
-              let count = storedCount ? parseInt(storedCount, 10) : 0;
-              if (isNaN(count) || count < 0) {
-                count = 0;
-              }
-              // Only reset if count exceeds limit (invalid state, should never happen)
-              // If count === FREE_LIMIT (1), that's valid - user has used up their free interview
-              if (count > FREE_LIMIT) {
-                console.log("[useUserPlan] Auth change: Invalid count detected (>1), resetting to 0");
-                count = 0;
-                localStorage.setItem(STORAGE_KEY_INTERVIEW_COUNT, "0");
-              }
-              setPlan("FREE");
-              setInterviewCount(count);
-              // Update email if not stored
-              if (!storedEmail) {
-                localStorage.setItem(STORAGE_KEY_USER_EMAIL, currentUserEmail);
-              }
-              console.log("[useUserPlan] Auth change: Same email, keeping FREE plan and count:", count);
-            }
-          }
-        } catch (e) {
-          console.error("[useUserPlan] Failed to reload on auth change:", e);
-          // On error, reset to defaults
-          setPlan("FREE");
-          setInterviewCount(0);
-          localStorage.setItem(STORAGE_KEY_PLAN, "FREE");
-          localStorage.setItem(STORAGE_KEY_INTERVIEW_COUNT, "0");
-          if (currentUserEmail) {
-            localStorage.setItem(STORAGE_KEY_USER_EMAIL, currentUserEmail);
-          }
-        }
+        setPlan(PLAN.FREE);
+        return;
       }
+
+      const currentUserEmail = getCurrentUserEmail();
+      if (!currentUserEmail) return;
+
+      const storedEmail = localStorage.getItem(STORAGE_KEY_USER_EMAIL);
+      const storedPlan = localStorage.getItem(STORAGE_KEY_PLAN);
+      const isDifferentEmail = storedEmail && storedEmail !== currentUserEmail;
+
+      if (isDifferentEmail) {
+        setPlan(PLAN.FREE);
+        setInterviewCount(0);
+        localStorage.setItem(STORAGE_KEY_PLAN, PLAN.FREE);
+        localStorage.setItem(STORAGE_KEY_INTERVIEW_COUNT, "0");
+        localStorage.setItem(STORAGE_KEY_USER_EMAIL, currentUserEmail);
+        return;
+      }
+
+      const normalizedCount = normalizeInterviewCount(
+        localStorage.getItem(STORAGE_KEY_INTERVIEW_COUNT),
+      );
+
+      if (storedPlan === PLAN.PRO) {
+        setPlan(PLAN.PRO);
+        setInterviewCount(normalizedCount);
+      } else {
+        const boundedCount = Math.min(normalizedCount, FREE_LIMIT);
+        setPlan(PLAN.FREE);
+        setInterviewCount(boundedCount);
+        localStorage.setItem(STORAGE_KEY_INTERVIEW_COUNT, String(boundedCount));
+      }
+
+      localStorage.setItem(STORAGE_KEY_USER_EMAIL, currentUserEmail);
     };
 
     window.addEventListener("auth-change", handleAuthChange);
     return () => window.removeEventListener("auth-change", handleAuthChange);
   }, []);
 
-  // Check if user can start interview
   const canStartInterview = useCallback(() => {
-    if (plan === "PRO") {
-      console.log("[useUserPlan] canStartInterview: PRO plan, allowed");
-      return true;
-    }
-    if (plan === "FREE") {
-      const canStart = interviewCount < FREE_LIMIT;
-      console.log("[useUserPlan] canStartInterview: FREE plan, interviewCount:", interviewCount, "/", FREE_LIMIT, "->", canStart);
-      return canStart;
-    }
-    console.log("[useUserPlan] canStartInterview: Unknown plan:", plan);
-    return false;
-  }, [plan, interviewCount]);
+    if (plan === PLAN.PRO) return true;
+    return interviewCount < FREE_LIMIT;
+  }, [interviewCount, plan]);
 
-  // Increment interview count (only for FREE users)
   const incrementInterviewCount = useCallback(() => {
-    if (plan === "FREE") {
-      const newCount = interviewCount + 1;
-      setInterviewCount(newCount);
-      localStorage.setItem(STORAGE_KEY_INTERVIEW_COUNT, String(newCount));
-      // Ensure email is stored
-      try {
-        const currentUser = localStorage.getItem("user");
-        if (currentUser) {
-          const userObj = JSON.parse(currentUser);
-          const email = userObj?.email;
-          if (email) {
-            localStorage.setItem(STORAGE_KEY_USER_EMAIL, email);
-          }
-        }
-      } catch (e) {
-        // Ignore
-      }
-    }
-  }, [plan, interviewCount]);
+    if (plan !== PLAN.FREE) return;
+    const nextCount = interviewCount + 1;
+    setInterviewCount(nextCount);
+    localStorage.setItem(STORAGE_KEY_INTERVIEW_COUNT, String(nextCount));
 
-  // Update plan to PRO (after payment)
+    const currentUserEmail = getCurrentUserEmail();
+    if (currentUserEmail) {
+      localStorage.setItem(STORAGE_KEY_USER_EMAIL, currentUserEmail);
+    }
+  }, [interviewCount, plan]);
+
   const upgradeToPro = useCallback(() => {
-    setPlan("PRO");
-    localStorage.setItem(STORAGE_KEY_PLAN, "PRO");
-    // Reset interview count when upgrading
+    setPlan(PLAN.PRO);
     setInterviewCount(0);
+    localStorage.setItem(STORAGE_KEY_PLAN, PLAN.PRO);
     localStorage.setItem(STORAGE_KEY_INTERVIEW_COUNT, "0");
-    // Store current user email
-    try {
-      const currentUser = localStorage.getItem("user");
-      if (currentUser) {
-        const userObj = JSON.parse(currentUser);
-        const email = userObj?.email;
-        if (email) {
-          localStorage.setItem(STORAGE_KEY_USER_EMAIL, email);
-        }
-      }
-    } catch (e) {
-      // Ignore
+
+    const currentUserEmail = getCurrentUserEmail();
+    if (currentUserEmail) {
+      localStorage.setItem(STORAGE_KEY_USER_EMAIL, currentUserEmail);
     }
   }, []);
 
-  // Get remaining interviews for FREE users
   const getRemainingInterviews = useCallback(() => {
-    if (plan === "PRO") return "unlimited";
+    if (plan === PLAN.PRO) return "unlimited";
     return Math.max(0, FREE_LIMIT - interviewCount);
-  }, [plan, interviewCount]);
+  }, [interviewCount, plan]);
 
-  // Check if user has reached limit
   const hasReachedLimit = useCallback(() => {
-    if (plan === "PRO") return false;
+    if (plan === PLAN.PRO) return false;
     return interviewCount >= FREE_LIMIT;
-  }, [plan, interviewCount]);
+  }, [interviewCount, plan]);
 
-  // Sync with user data (for future use if backend endpoint is added)
   const syncWithBackend = useCallback(async (userData) => {
     try {
-      // If backend returns plan, use it
-      if (userData?.plan === "PRO" || userData?.plan === "FREE") {
-        console.log("[useUserPlan] Syncing plan from userData:", userData.plan);
-        setPlan(userData.plan);
-        localStorage.setItem(STORAGE_KEY_PLAN, userData.plan);
+      const resolvedPlan = resolvePlanFromData(userData);
+      if (resolvedPlan) {
+        setPlan(resolvedPlan);
+        localStorage.setItem(STORAGE_KEY_PLAN, resolvedPlan);
       }
-      // If backend returns interviewCount, use it (with validation)
+
       if (typeof userData?.interviewCount === "number" && userData.interviewCount >= 0) {
-        // If plan is FREE, ensure interviewCount doesn't exceed limit
-        const count = userData.plan === "FREE" ? Math.min(userData.interviewCount, FREE_LIMIT) : userData.interviewCount;
-        console.log("[useUserPlan] Syncing interviewCount from userData:", userData.interviewCount, "-> using:", count);
-        setInterviewCount(count);
-        localStorage.setItem(STORAGE_KEY_INTERVIEW_COUNT, String(count));
-      } else if (userData?.plan === "FREE") {
-        // If backend doesn't return interviewCount but plan is FREE, default to 0
-        console.log("[useUserPlan] No interviewCount from backend, defaulting to 0 for FREE plan");
+        const targetPlan =
+          resolvedPlan || localStorage.getItem(STORAGE_KEY_PLAN) || PLAN.FREE;
+        const boundedCount =
+          targetPlan === PLAN.FREE
+            ? Math.min(userData.interviewCount, FREE_LIMIT)
+            : userData.interviewCount;
+
+        setInterviewCount(boundedCount);
+        localStorage.setItem(STORAGE_KEY_INTERVIEW_COUNT, String(boundedCount));
+      } else if (resolvedPlan === PLAN.FREE) {
         setInterviewCount(0);
         localStorage.setItem(STORAGE_KEY_INTERVIEW_COUNT, "0");
       }
+
+      return resolvedPlan;
     } catch (error) {
       console.error("Failed to sync user plan:", error);
+      return null;
     }
   }, []);
 
-  // Manual refresh (placeholder for future backend integration)
   const refreshFromBackend = useCallback(async () => {
-    // No-op: endpoint doesn't exist, using local state only
-    console.log("[useUserPlan] refreshFromBackend called but endpoint not available, using local state");
-  }, []);
+    const endpointUnavailable =
+      localStorage.getItem(STORAGE_KEY_PROFILE_ENDPOINT_UNAVAILABLE) === "1";
+    if (endpointUnavailable) {
+      return {
+        payload: null,
+        plan: localStorage.getItem(STORAGE_KEY_PLAN) || PLAN.FREE,
+      };
+    }
+
+    try {
+      const res = await userAPI.getCurrentProfile();
+      const payload = res.data?.data ?? res.data ?? {};
+      localStorage.removeItem(STORAGE_KEY_PROFILE_ENDPOINT_UNAVAILABLE);
+
+      if (payload && typeof payload === "object") {
+        const oldUser = localStorage.getItem("user");
+        try {
+          const parsedOld = oldUser ? JSON.parse(oldUser) : {};
+          localStorage.setItem("user", JSON.stringify({ ...parsedOld, ...payload }));
+        } catch {
+          localStorage.setItem("user", JSON.stringify(payload));
+        }
+      }
+
+      const resolvedPlan = await syncWithBackend(payload);
+      return {
+        payload,
+        plan: resolvedPlan || localStorage.getItem(STORAGE_KEY_PLAN) || PLAN.FREE,
+      };
+    } catch (error) {
+      if (error?.code === "PROFILE_ENDPOINT_NOT_FOUND") {
+        localStorage.setItem(STORAGE_KEY_PROFILE_ENDPOINT_UNAVAILABLE, "1");
+      } else {
+        console.warn("[useUserPlan] refreshFromBackend failed:", error?.message || error);
+      }
+      return {
+        payload: null,
+        plan: localStorage.getItem(STORAGE_KEY_PLAN) || PLAN.FREE,
+      };
+    }
+  }, [syncWithBackend]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const endpointUnavailable =
+      localStorage.getItem(STORAGE_KEY_PROFILE_ENDPOINT_UNAVAILABLE) === "1";
+
+    if (!token || endpointUnavailable || hasCheckedProfileEndpoint) return;
+    hasCheckedProfileEndpoint = true;
+    void refreshFromBackend();
+  }, [refreshFromBackend]);
 
   return {
     plan,

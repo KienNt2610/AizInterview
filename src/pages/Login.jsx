@@ -4,7 +4,8 @@ import { LogIn } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import { useToast } from '../components/ui/Toast';
-import { authAPI, userAPI } from '../services/api';
+import { authAPI } from '../services/api';
+import { PLAN, resolvePlanFromData } from '../utils/plan';
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -68,16 +69,16 @@ const Login = () => {
         password: formData.password,
       });
 
-      // backend có thể trả { data: {...} } hoặc {...}
+      // backend cÃƒÂ³ thÃ¡Â»Æ’ trÃ¡ÂºÂ£ { data: {...} } hoÃ¡ÂºÂ·c {...}
       const payload = res.data?.data ?? res.data ?? {};
 
-      // Bắt token theo nhiều key phổ biến (tránh undefined)
+      // BÃ¡ÂºÂ¯t token theo nhiÃ¡Â»Âu key phÃ¡Â»â€¢ biÃ¡ÂºÂ¿n (trÃƒÂ¡nh undefined)
       const accessToken =
         payload.accessToken ??
         payload.token ??
         payload.jwt ??
         payload.access_token ??
-        payload.accessTokenToken; // (phòng khi BE đặt sai)
+        payload.accessTokenToken; // (phÃƒÂ²ng khi BE Ã„â€˜Ã¡ÂºÂ·t sai)
 
       const refreshToken =
         payload.refreshToken ?? payload.refresh_token ?? payload.refresh ?? null;
@@ -90,7 +91,7 @@ const Login = () => {
       localStorage.setItem('token', accessToken);
       if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
 
-      // Lưu user nếu có, còn không thì vẫn lưu email cho UI
+      // LÃ†Â°u user nÃ¡ÂºÂ¿u cÃƒÂ³, cÃƒÂ²n khÃƒÂ´ng thÃƒÂ¬ vÃ¡ÂºÂ«n lÃ†Â°u email cho UI
       const userObj =
         payload.user ??
         {
@@ -99,21 +100,8 @@ const Login = () => {
           fullName: payload.fullName ?? payload.name,
         };
 
-      // Check if this is a different user (email changed) - clear old plan data
-      const oldUser = localStorage.getItem('user');
-      let isNewUser = true;
-      if (oldUser) {
-        try {
-          const oldUserObj = JSON.parse(oldUser);
-          if (oldUserObj.email === userObj.email) {
-            isNewUser = false;
-          }
-        } catch (e) {
-          // Invalid old user data, treat as new user
-        }
-      }
-
       localStorage.setItem('user', JSON.stringify(userObj));
+      const resolvedPlanFromLogin = resolvePlanFromData(payload) || resolvePlanFromData(userObj);
 
       // Check stored email to determine if this is a different user
       // Use storedEmail (userPlanEmail) as the source of truth, not oldUser
@@ -131,17 +119,18 @@ const Login = () => {
         
         localStorage.removeItem("userPlan");
         localStorage.removeItem("interviewCount");
-        // Set default plan for new user (FREE with 0 interviews = 1 free interview remaining)
-        localStorage.setItem("userPlan", "FREE");
+        const targetPlan = resolvedPlanFromLogin || PLAN.FREE;
+        localStorage.setItem("userPlan", targetPlan);
         localStorage.setItem("interviewCount", "0");
         localStorage.setItem("userPlanEmail", userObj.email);
       } else {
         // Existing user with same email - keep their plan data
         const storedPlan = localStorage.getItem("userPlan");
-        
-        if (storedPlan === "PRO") {
+
+        if (resolvedPlanFromLogin === PLAN.PRO || storedPlan === PLAN.PRO) {
           // PRO users keep their status
           console.log("[Login] Existing PRO user with same email, keeping plan");
+          localStorage.setItem("userPlan", PLAN.PRO);
           const storedCount = localStorage.getItem("interviewCount");
           const count = storedCount ? parseInt(storedCount, 10) : 0;
           if (isNaN(count) || count < 0) {
@@ -176,7 +165,7 @@ const Login = () => {
       toast('Login successful! Redirecting...', { type: 'success' });
       navigate('/');
     } catch (error) {
-      // Nếu là lỗi tự throw "Missing access token..." thì show thân thiện
+      // NÃ¡ÂºÂ¿u lÃƒÂ  lÃ¡Â»â€”i tÃ¡Â»Â± throw "Missing access token..." thÃƒÂ¬ show thÃƒÂ¢n thiÃ¡Â»â€¡n
       const msg =
         error?.message === 'Missing access token in login response'
           ? 'Login succeeded but token was not returned by backend. Please check /Auth/login response fields.'
@@ -248,7 +237,7 @@ const Login = () => {
                 id="password"
                 name="password"
                 type="password"
-                placeholder="••••••••"
+                placeholder="Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢"
                 value={formData.password}
                 onChange={(e) => {
                   handleChange(e);

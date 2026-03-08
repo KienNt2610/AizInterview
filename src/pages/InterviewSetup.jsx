@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Video,
@@ -48,7 +48,6 @@ const InterviewSetup = () => {
 
   useEffect(() => {
     fetchJobs();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchJobs = async () => {
@@ -58,7 +57,7 @@ const InterviewSetup = () => {
     try {
       const res = await jobAPI.getAll();
 
-      // Swagger của bạn trả { data: [], isSuccess: true, error: null }
+      // Backend có thể trả { data: [], isSuccess: true, error: null }
       const payload = res.data?.data ?? res.data;
 
       const list = Array.isArray(payload)
@@ -81,14 +80,14 @@ const InterviewSetup = () => {
       setJobs([]);
       setJobsError(
         err?.response?.data?.message ||
-          "Không load được JobDescription. Hãy kiểm tra backend/DB (API /api/JobDescription)."
+          "Không tải được JobDescription. Hãy kiểm tra backend/DB (API /api/JobDescription)."
       );
     } finally {
       setLoadingJobs(false);
     }
   };
 
-  // ✅ map đúng theo DB của bạn: Id, Sector, Level, Description, roleId
+  // Map đúng theo DB: Id, Sector, Level, Description, roleId
   const positionCards = useMemo(() => {
     return (jobs || []).map((j) => {
       const id =
@@ -152,15 +151,17 @@ const InterviewSetup = () => {
       disabledConditions,
       // Show which specific condition is causing the button to be disabled
       disabledReason: Object.entries(disabledConditions)
-        .filter(([_, value]) => value === true)
+        .filter(([, value]) => value === true)
         .map(([key]) => key)
         .join(", ") || "NONE (button should be enabled)",
     });
   }, [plan, interviewCount, canStartInterview, hasReachedFreeLimit, loading, loadingJobs, positionCards.length, jobDescriptionId]);
 
-  const handleStartInterview = async () => {
+  const handleStartInterview = async (retryOrEvent = false) => {
+    const isRetry = retryOrEvent === true;
     console.log("=== handleStartInterview CALLED ===");
     console.log("Current state:", {
+      isRetry,
       plan,
       interviewCount,
       canStartInterview: canStartInterview(),
@@ -391,11 +392,74 @@ const InterviewSetup = () => {
       
       // Handle specific error codes
       if (errorCode === "LICENSE_INVALID" || errorMessage?.toLowerCase().includes("license")) {
-        toast(errorMessage, { type: "error" });
-        // Optionally redirect to payment page after a delay
-        setTimeout(() => {
-          navigate("/payment");
-        }, 2000);
+        const isFirstFreeAttempt = plan === "FREE" && interviewCount < 1;
+
+        if (isFirstFreeAttempt) {
+          const localSessionId = `demo-${Date.now()}`;
+          try {
+            const aiRes = await aiInterviewAPI.start({
+              role_id: selectedJob?.roleId,
+              mode: "simulation",
+            });
+            const aiPayload = aiRes.data?.data ?? aiRes.data;
+            const currentQuestionId =
+              aiPayload?.current_question_id ?? aiPayload?.questionId ?? aiPayload?.question?.id ?? null;
+            const currentTopic = aiPayload?.current_topic ?? aiPayload?.topic ?? null;
+            const currentDifficulty = aiPayload?.current_difficulty ?? aiPayload?.difficulty ?? "intermediate";
+            const askedIds = aiPayload?.asked_ids ?? aiPayload?.askedIds ?? [];
+            const displayText =
+              aiPayload?.display_text ??
+              aiPayload?.displayText ??
+              aiPayload?.question?.text ??
+              aiPayload?.question ??
+              "";
+            const audioBase64 =
+              extractAudioBase64(aiPayload) || extractAudioBase64({ question: aiPayload?.question });
+
+            localStorage.setItem(
+              "interviewContext",
+              JSON.stringify({
+                interviewSessionId: String(localSessionId),
+                jobDescriptionId: String(jobDescriptionId),
+                jobTitle: selectedJob?.label ?? "",
+                roleId: selectedJob?.roleId ?? null,
+                createdAt: new Date().toISOString(),
+                current_question_id: currentQuestionId,
+                current_topic: currentTopic,
+                current_difficulty: currentDifficulty,
+                asked_ids: askedIds,
+                turnIndex: 1,
+                mode: "simulation",
+                currentQuestionText: displayText,
+                currentQuestionAudioBase64: audioBase64 || null,
+                isLocalDemo: true,
+              }),
+            );
+          } catch (aiError) {
+            console.error("Failed to init local demo AI question:", aiError);
+            localStorage.setItem(
+              "interviewContext",
+              JSON.stringify({
+                interviewSessionId: String(localSessionId),
+                jobDescriptionId: String(jobDescriptionId),
+                jobTitle: selectedJob?.label ?? "",
+                roleId: selectedJob?.roleId ?? null,
+                createdAt: new Date().toISOString(),
+                mode: "simulation",
+                aiError: true,
+                isLocalDemo: true,
+              }),
+            );
+          }
+
+          incrementInterviewCount();
+          navigate(`/interview/${localSessionId}/session`);
+        } else {
+          toast(errorMessage, { type: "error" });
+          setTimeout(() => {
+            navigate("/payment");
+          }, 1500);
+        }
       } else {
         toast(errorMessage, { type: "error" });
       }
@@ -453,7 +517,7 @@ const InterviewSetup = () => {
           )}
           {plan === "PRO" && (
             <span className="block mt-1 text-[#66FCF1] font-medium">
-              PRO — phỏng vấn không giới hạn
+              PRO - phỏng vấn không giới hạn
             </span>
           )}
         </p>
@@ -537,7 +601,9 @@ const InterviewSetup = () => {
             <Button
               variant="primary"
               size="lg"
-              onClick={handleStartInterview}
+              onClick={() => {
+                void handleStartInterview();
+              }}
               disabled={
                 loading ||
                 hasReachedFreeLimit() ||
