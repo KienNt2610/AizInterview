@@ -40,29 +40,29 @@ const MAX_QUESTIONS = 12;
 
 // Transition responses for simplified evaluation display
 const PASS_RESPONSES = [
-  "á»”n rá»“i, mÃ¬nh sang cÃ¢u tiáº¿p theo nhÃ©.",
-  "Tá»‘t láº¯m, tiáº¿p tá»¥c nÃ o.",
-  "Ok, cÃ¢u nÃ y á»•n, sang cÃ¢u khÃ¡c.",
-  "Anh ghi nháº­n, mÃ¬nh Ä‘i tiáº¿p nhÃ©.",
-  "CÃ¢u tráº£ lá»i á»•n, tiáº¿p theo.",
-  "ÄÆ°á»£c rá»“i, sang cÃ¢u tiáº¿p.",
-  "Táº¡m á»•n, mÃ¬nh tiáº¿p tá»¥c.",
-  "Ok, cÃ¢u sau nhÃ©.",
-  "Anh hiá»ƒu rá»“i, sang cÃ¢u tiáº¿p.",
-  "á»”n Ã¡p, mÃ¬nh Ä‘i tiáº¿p.",
+  "Ổn rồi, mình sang câu tiếp theo nhé.",
+  "Tốt lắm, tiếp tục nào.",
+  "Ok, câu này ổn, sang câu khác.",
+  "Anh ghi nhận, mình đi tiếp nhé.",
+  "Câu trả lời ổn, tiếp theo.",
+  "Được rồi, sang câu tiếp.",
+  "Tạm ổn, mình tiếp tục.",
+  "Ok, câu sau nhé.",
+  "Anh hiểu rồi, sang câu tiếp.",
+  "Ổn áp, mình đi tiếp.",
 ];
 
 const FAIL_RESPONSES = [
-  "ChÆ°a á»•n láº¯m, mÃ¬nh thá»­ cÃ¢u khÃ¡c nhÃ©.",
-  "KhÃ´ng sao, sang cÃ¢u tiáº¿p.",
-  "CÃ¢u nÃ y chÆ°a Ä‘Ãºng, mÃ¬nh tiáº¿p tá»¥c.",
-  "á»”n thÃ´i, mÃ¬nh Ä‘i tiáº¿p.",
-  "KhÃ´ng váº¥n Ä‘á», sang cÃ¢u sau.",
-  "ChÆ°a chÃ­nh xÃ¡c, thá»­ cÃ¢u khÃ¡c.",
-  "Ok, bá» qua cÃ¢u nÃ y nhÃ©.",
-  "MÃ¬nh sang cÃ¢u tiáº¿p theo.",
-  "ChÆ°a Ä‘áº¡t, tiáº¿p tá»¥c.",
-  "KhÃ´ng sao, cÃ¢u tiáº¿p nhÃ©.",
+  "Chưa ổn lắm, mình thử câu khác nhé.",
+  "Không sao, sang câu tiếp.",
+  "Câu này chưa đúng, mình tiếp tục.",
+  "Ổn thôi, mình đi tiếp.",
+  "Không vấn đề, sang câu sau.",
+  "Chưa chính xác, thử câu khác.",
+  "Ok, bỏ qua câu này nhé.",
+  "Mình sang câu tiếp theo.",
+  "Chưa đạt, tiếp tục.",
+  "Không sao, câu tiếp nhé.",
 ];
 
 const InterviewSession = () => {
@@ -156,7 +156,7 @@ const InterviewSession = () => {
   // Auto-next timeout after showing feedback
   const autoNextTimeoutRef = useRef(null);
 
-  // Auto-submit "khÃ´ng biáº¿t" timeout per question
+  // Auto-submit "không biết" timeout per question
   const autoSubmitTimerRef = useRef(null);
   const hasAutoSubmittedRef = useRef(false);
 
@@ -288,7 +288,7 @@ const InterviewSession = () => {
       
       const contextStr = localStorage.getItem('interviewContext');
       if (!contextStr) {
-        toast('KhÃ´ng tÃ¬m tháº¥y thÃ´ng tin interview. Vui lÃ²ng báº¯t Ä‘áº§u láº¡i.', { type: 'error' });
+        toast('Không tìm thấy thông tin interview. Vui lòng bắt đầu lại.', { type: 'error' });
         navigate('/interview');
         return;
       }
@@ -331,7 +331,7 @@ const InterviewSession = () => {
       // Validate question data
       if (!questionId || !questionText || questionText.trim().length === 0) {
         console.error("=== HYDRATION ERROR: Missing question data ===");
-        toast('KhÃ´ng tÃ¬m tháº¥y cÃ¢u há»i Ä‘áº§u tiÃªn. Vui lÃ²ng báº¯t Ä‘áº§u láº¡i.', { type: 'error' });
+        toast('Không tìm thấy câu hỏi đầu tiên. Vui lòng bắt đầu lại.', { type: 'error' });
         navigate('/interview');
         return;
       }
@@ -357,8 +357,8 @@ const InterviewSession = () => {
       
     } catch (error) {
       console.error('Failed to load interview data:', error);
-      toast('KhÃ´ng thá»ƒ táº£i dá»¯ liá»‡u interview', { type: 'error' });
-      setError('KhÃ´ng thá»ƒ táº£i dá»¯ liá»‡u interview');
+      toast('Không thể tải dữ liệu interview', { type: 'error' });
+      setError('Không thể tải dữ liệu interview');
     }
   };
   
@@ -670,7 +670,7 @@ const InterviewSession = () => {
       return;
     }
 
-    // If still recording, stop recording first (nhÆ°ng váº«n auto gá»­i "khÃ´ng biáº¿t")
+    // If still recording, stop recording first (nhưng vẫn auto gửi "không biết")
     if (recordingState === 'recording') {
       console.log('=== [AUTO] Stopping recording before auto-submit ===');
       stopRecording();
@@ -678,11 +678,11 @@ const InterviewSession = () => {
 
     hasAutoSubmittedRef.current = true;
 
-    toast('Háº¿t thá»i gian. Tá»± Ä‘á»™ng gá»­i: "khÃ´ng biáº¿t"', { type: 'warning' });
+    toast('Hết thời gian. Tự động gửi: "không biết"', { type: 'warning' });
 
-    // Force answer "khÃ´ng biáº¿t", bypass STT
+    // Force answer "không biết", bypass STT
     handleSubmitAnswer({
-      forceTextAnswer: 'khÃ´ng biáº¿t',
+      forceTextAnswer: 'không biết',
       reason: 'timeout_60s',
     });
   };
@@ -727,7 +727,7 @@ const InterviewSession = () => {
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      // User báº¯t Ä‘áº§u ghi Ã¢m, clear auto-timeout Ä‘á»ƒ khÃ´ng Ä‘Ã¨ lÃªn hÃ nh vi user
+      // User bắt đầu ghi âm, clear auto-timeout để không đè lên hành vi user
       clearAutoSubmitTimer('startRecording');
 
       mediaRecorderRef.current = new MediaRecorder(stream);
@@ -831,10 +831,10 @@ const InterviewSession = () => {
       // Phase stays 'asking' - user is recording
       // Clear previous transcript when starting new recording
       setTranscriptText('');
-      toast('Báº¯t Ä‘áº§u ghi Ã¢m', { type: 'info' });
+      toast('Bắt đầu ghi âm', { type: 'info' });
     } catch (error) {
-      toast('KhÃ´ng thá»ƒ báº¯t Ä‘áº§u ghi Ã¢m. Vui lÃ²ng kiá»ƒm tra quyá»n truy cáº­p microphone.', { type: 'error' });
-      setError('KhÃ´ng thá»ƒ truy cáº­p microphone');
+      toast('Không thể bắt đầu ghi âm. Vui lòng kiểm tra quyền truy cập microphone.', { type: 'error' });
+      setError('Không thỒ truy cập microphone');
     }
   };
 
@@ -842,7 +842,7 @@ const InterviewSession = () => {
     if (mediaRecorderRef.current && recordingState === 'recording') {
       mediaRecorderRef.current.stop();
       setIsRecording(false); // Clear recording state
-      toast('ÄÃ£ dá»«ng ghi Ã¢m', { type: 'info' });
+      toast('Đã dừng ghi âm', { type: 'info' });
     }
   };
   
@@ -868,19 +868,19 @@ const InterviewSession = () => {
       console.warn("=== SUBMISSION BLOCKED: Already in progress ===");
       console.warn("submitLockRef.current:", submitLockRef.current);
       console.warn("isSubmitting:", isSubmitting, "isAnswerProcessing:", isAnswerProcessing);
-      toast('Äang xá»­ lÃ½ cÃ¢u tráº£ lá»i. Vui lÃ²ng Ä‘á»£i...', { type: 'warning' });
+      toast('Đang xử lý câu trả lời. Vui lòng đợi...', { type: 'warning' });
       return;
     }
     
     // Validation: Must have interview context
     if (!interviewContext) {
-      toast('KhÃ´ng tÃ¬m tháº¥y thÃ´ng tin interview', { type: 'error' });
+      toast('Không tìm thấy thông tin interview', { type: 'error' });
       return;
     }
     
     // Validation: Must have current question (single source of truth)
     if (!turnState.currentQuestion || !turnState.currentQuestion.id || !turnState.currentQuestion.text) {
-      toast('KhÃ´ng tÃ¬m tháº¥y cÃ¢u há»i hiá»‡n táº¡i', { type: 'error' });
+      toast('Không tìm thấy câu hỏi hiện tại', { type: 'error' });
       return;
     }
     
@@ -971,13 +971,13 @@ const InterviewSession = () => {
       finalTranscriptText = finalTranscriptText.trim();
       
       // Guard: Reject mock/hard-coded transcript text
-      if (finalTranscriptText.toLowerCase().includes('báº£n ghi Ã¢m máº«u')) {
-        throw new Error('PhÃ¡t hiá»‡n vÄƒn báº£n máº«u. Vui lÃ²ng ghi Ã¢m láº¡i vá»›i giá»ng nÃ³i tháº­t.');
+      if (finalTranscriptText.toLowerCase().includes('bản ghi âm mẫu')) {
+        throw new Error('Phát hiện văn bản mẫu. Vui lòng ghi âm lại với giọng nói thật.');
       }
       
       // Ensure we have a valid answer (either real transcript or fallback)
       if (!finalTranscriptText || finalTranscriptText.length === 0) {
-        throw new Error('KhÃ´ng thá»ƒ xÃ¡c Ä‘á»‹nh cÃ¢u tráº£ lá»i. Vui lÃ²ng thá»­ láº¡i.');
+        throw new Error('Không thể xác định câu trả lời. Vui lòng thử lại.');
       }
       
       console.log("=== FINAL USER ANSWER ===");
@@ -1136,7 +1136,7 @@ const InterviewSession = () => {
             console.log("=== LOCAL DEMO MODE: Skipping end-interview backend call ===");
           }
 
-          toast("Cuá»™c phá»ng váº¥n Ä‘Ã£ hoÃ n thÃ nh!", { type: "success" });
+          toast("Cuộc phỏng vấn đã hoàn thành!", { type: "success" });
           setTimeout(() => {
             navigate(`/interview/${sessionIdStr}/summary`);
           }, 100);
@@ -1149,7 +1149,7 @@ const InterviewSession = () => {
           console.error("Error message:", error.message);
           
           // Even if end-interview failed, navigate to summary (interview might already be ended)
-          toast('Cuá»™c phá»ng váº¥n Ä‘Ã£ hoÃ n thÃ nh!', { type: 'success' });
+          toast('Cuộc phỏng vấn đã hoàn thành!', { type: 'success' });
           setTimeout(() => {
             navigate(`/interview/${sessionIdStr}/summary`);
           }, 100);
@@ -1400,7 +1400,7 @@ const InterviewSession = () => {
       console.error('Failed to submit answer:', error);
       
       // Extract error message
-      const errorMessage = error?.message || 'Gá»­i cÃ¢u tráº£ lá»i tháº¥t báº¡i. Thá»­ láº¡i.';
+      const errorMessage = error?.message || 'Gửi câu trả lời thất bại. Thử lại.';
       
       // Set error state
       setError(errorMessage);
@@ -1485,7 +1485,7 @@ const InterviewSession = () => {
     if (!nextQuestionId || (typeof nextQuestionId === 'string' && nextQuestionId.trim() === '')) {
       console.error("=== COMMIT NEXT QUESTION ERROR: nextQuestionId is missing ===");
       console.error("pendingNextData:", pendingNextData);
-      toast('KhÃ´ng tÃ¬m tháº¥y cÃ¢u há»i tiáº¿p theo. Vui lÃ²ng thá»­ láº¡i.', { type: 'error' });
+      toast('Không tìm thấy câu hỏi tiếp theo. Vui lòng thử lại.', { type: 'error' });
       return false;
     }
     
@@ -1668,7 +1668,7 @@ const InterviewSession = () => {
       // Cancel any ongoing audio before ending interview
       stopAudioBase64();
 
-      toast('Cuá»™c phá»ng váº¥n Ä‘Ã£ hoÃ n thÃ nh!', { type: 'success' });
+      toast('Cuộc phỏng vấn đã hoàn thành!', { type: 'success' });
 
       // Navigate to summary page
       navigate(`/interview/${sessionIdStr}/summary`);
@@ -1698,7 +1698,7 @@ const InterviewSession = () => {
       }
       
       // Navigate to summary even if API end failed (Summary will handle empty state)
-      toast('Cuá»™c phá»ng váº¥n Ä‘Ã£ hoÃ n thÃ nh!', { type: 'success' });
+      toast('Cuộc phỏng vấn đã hoàn thành!', { type: 'success' });
       navigate(`/interview/${sessionIdStr}/summary`);
     }
   };
@@ -1750,7 +1750,7 @@ const InterviewSession = () => {
       return { turns: [] };
     }
     
-    // Extract turns/evaluations: cÃ³ thá»ƒ náº±m trong turns/interviewTurns/items/evaluations
+    // Extract turns/evaluations: có thỒ nằm trong turns/interviewTurns/items/evaluations
     const turns = Array.isArray(detail.turns)
       ? detail.turns
       : Array.isArray(detail.interviewTurns)
@@ -1954,7 +1954,7 @@ const InterviewSession = () => {
       <div className="min-h-screen bg-[#0B0C10] flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-[#66FCF1] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-[#C5C6C7]">Äang táº£i interview...</p>
+          <p className="text-[#C5C6C7]">Đang tải interview...</p>
         </div>
       </div>
     );
@@ -1975,11 +1975,11 @@ const InterviewSession = () => {
               </h1>
               <div className="hidden sm:flex items-center gap-2 text-sm text-[#C5C6C7]">
                 <span>Turn {turnState.turnIndex}</span>
-                <span className="text-[#66FCF1]">â€¢</span>
+                <span className="text-[#66FCF1]">⬢</span>
                 <span>{interviewContext.jobTitle || 'Interview'}</span>
                 {turnState.currentQuestion?.topic && (
                   <>
-                    <span className="text-[#66FCF1]">â€¢</span>
+                    <span className="text-[#66FCF1]">•</span>
                     <span>{turnState.currentQuestion.topic}</span>
                   </>
                 )}
@@ -2001,7 +2001,7 @@ const InterviewSession = () => {
                <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0B0C10]/80 border border-[#66FCF1]/20">
                  <Clock className="w-4 h-4 text-[#66FCF1]" />
                  <span className="text-xs font-mono text-[#C5C6C7]">
-                  {(phase === 'showing_feedback' || phase === 'showing_transition') ? 'Chá» cÃ¢u há»i tiáº¿p theo...' : 'CÃ²n '}
+                  {(phase === 'showing_feedback' || phase === 'showing_transition') ? 'Chờ câu hỏi tiếp theo...' : 'Còn '}
                   {phase !== 'showing_feedback' && phase !== 'showing_transition' && (
                      <span className="text-[#66FCF1] ml-1">
                        {formatTime(questionTimeLeft)}
@@ -2027,7 +2027,7 @@ const InterviewSession = () => {
                 className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
               >
                 <X className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Káº¿t thÃºc</span>
+                <span className="hidden sm:inline">Kết thúc</span>
               </Button>
             </div>
           </div>
@@ -2049,7 +2049,7 @@ const InterviewSession = () => {
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-center gap-2">
               <Clock className="w-4 h-4 text-[#66FCF1]" />
               <span className="text-sm text-[#C5C6C7]">
-                Thá»i gian tráº£ lá»i cÃ²n láº¡i:&nbsp;
+                Thời gian trả lời còn lại:&nbsp;
                 <span className="font-mono text-[#66FCF1]">
                   {formatTime(questionTimeLeft)}
                 </span>
@@ -2094,25 +2094,25 @@ const InterviewSession = () => {
               {phase === 'showing_feedback' ? (
                 <div className="flex items-center gap-2 text-[#66FCF1]">
                   <CheckCircle className="w-5 h-5" />
-                  <span className="text-sm font-medium">ÄÃ¡nh giÃ¡ Ä‘Ã£ hoÃ n táº¥t</span>
+                  <span className="text-sm font-medium">Đánh giá đã hoàn tất</span>
                 </div>
               ) : phase === 'asking' && recordingState === 'recording' ? (
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-                  <span className="text-sm font-medium text-red-400">Äang ghi Ã¢m...</span>
+                  <span className="text-sm font-medium text-red-400">Đang ghi âm...</span>
                   <span className="text-sm font-mono text-[#C5C6C7]">{formatTime(recordingTime)}</span>
                 </div>
               ) : recordingState === 'stopped' && recordedAudioBlob ? (
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-5 h-5 text-[#45A29E]" />
                   <span className="text-sm font-medium text-[#45A29E]">
-                    {isTranscribing ? "Äang chuyá»ƒn Ä‘á»•i giá»ng nÃ³i..." : "ÄÃ£ ghi Ã¢m - Sáºµn sÃ ng gá»­i"}
+                    {isTranscribing ? "Đang chuyển đổi giọng nói..." : "Đã ghi âm - Sẵn sàng gửi"}
                   </span>
                 </div>
               ) : (
                 <div className="flex items-center gap-2 text-[#C5C6C7]">
                   <Clock className="w-4 h-4" />
-                  <span className="text-sm">Sáºµn sÃ ng ghi Ã¢m</span>
+                  <span className="text-sm">Sẵn sàng ghi âm</span>
                 </div>
               )}
             </div>
@@ -2123,7 +2123,7 @@ const InterviewSession = () => {
                 // Show "Moving to next question..." during transition (auto-advancing)
                 <div className="flex items-center gap-2 text-[#C5C6C7]">
                   <div className="w-5 h-5 border-2 border-[#66FCF1] border-t-transparent rounded-full animate-spin" />
-                  <span className="text-sm">Äang chuyá»ƒn sang cÃ¢u tiáº¿p theo...</span>
+                  <span className="text-sm">Đang chuyỒn sang câu tiếp theo...</span>
                 </div>
               ) : phase === 'showing_feedback' ? (
                 // Show "Next question" button when showing feedback (legacy)
@@ -2136,12 +2136,12 @@ const InterviewSession = () => {
                 >
                   {pendingNext?.is_end_of_interview ? (
                     <>
-                      HoÃ n thÃ nh
+                      Hoàn thành
                       <CheckCircle className="w-5 h-5 ml-2" />
                     </>
                   ) : (
                     <>
-                      CÃ¢u há»i tiáº¿p theo
+                      Câu hỏi tiếp theo
                       <ArrowRight className="w-5 h-5 ml-2" />
                     </>
                   )}
@@ -2156,7 +2156,7 @@ const InterviewSession = () => {
                   className="px-8 py-6 text-lg glow-primary-hover"
                 >
                   <Mic className="w-5 h-5 mr-2" />
-                  Báº¯t Ä‘áº§u ghi Ã¢m
+                  Bắt đầu ghi âm
                 </Button>
               ) : phase === 'asking' && recordingState === 'recording' ? (
                 // Show "Stop recording" button when recording
@@ -2168,7 +2168,7 @@ const InterviewSession = () => {
                   className="px-8 py-6 text-lg"
                 >
                   <Square className="w-5 h-5 mr-2" />
-                  Dá»«ng ghi Ã¢m
+                  Dừng ghi âm
                 </Button>
               ) : phase === 'asking' && recordingState === 'stopped' ? (
                 // Show "Re-record" and "Submit" buttons when recording stopped
@@ -2180,7 +2180,7 @@ const InterviewSession = () => {
                     disabled={isAnswerProcessing || isTranscribing || isSubmitting || phase === 'showing_feedback' || phase === 'showing_transition'}
                     className="px-6 py-6 text-lg border-[#66FCF1]/30 text-[#66FCF1] hover:bg-[#66FCF1]/10"
                   >
-                    Ghi láº¡i
+                    Ghi lại
                   </Button>
                   <Button
                     variant="primary"
@@ -2200,16 +2200,16 @@ const InterviewSession = () => {
                     {isTranscribing ? (
                       <>
                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                        Äang chuyá»ƒn Ä‘á»•i...
+                        Đang chuyển đổi...
                       </>
                     ) : isSubmitting ? (
                       <>
                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                        Äang gá»­i...
+                        Đang gửi...
                       </>
                     ) : (
                       <>
-                        Gá»­i cÃ¢u tráº£ lá»i
+                        Gửi câu trả lời
                         <ArrowRight className="w-5 h-5 ml-2" />
                       </>
                     )}
@@ -2225,12 +2225,12 @@ const InterviewSession = () => {
       <Modal
         isOpen={showEndModal}
         onClose={() => setShowEndModal(false)}
-        title="Káº¿t thÃºc cuá»™c phá»ng váº¥n sá»›m?"
+        title="Kết thúc cuộc phỏng vấn sớm?"
         size="md"
       >
         <div className="space-y-4">
           <p className="text-[#C5C6C7]">
-            Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n káº¿t thÃºc cuá»™c phá»ng váº¥n nÃ y? Tiáº¿n trÃ¬nh cá»§a báº¡n sáº½ Ä‘Æ°á»£c lÆ°u, nhÆ°ng báº¡n sáº½ khÃ´ng thá»ƒ tráº£ lá»i cÃ¡c cÃ¢u há»i cÃ²n láº¡i.
+            Bạn có chắc chắn muốn kết thúc cuộc phỏng vấn này? Tiến trình của bạn sẽ được lưu, nhưng bạn sẽ không thể trả lời các câu hỏi còn lại.
           </p>
           <div className="flex gap-3 justify-end">
             <Button
@@ -2238,7 +2238,7 @@ const InterviewSession = () => {
               onClick={() => setShowEndModal(false)}
               className="border-[#66FCF1]/30 text-[#66FCF1] hover:bg-[#66FCF1]/10"
             >
-              Tiáº¿p tá»¥c
+              Tiếp tục
             </Button>
             <Button
               variant="danger"
@@ -2247,7 +2247,7 @@ const InterviewSession = () => {
                 handleCompleteInterview();
               }}
             >
-              Káº¿t thÃºc
+              Kết thúc
             </Button>
           </div>
         </div>

@@ -69,16 +69,16 @@ const Login = () => {
         password: formData.password,
       });
 
-      // backend cÃƒÂ³ thÃ¡Â»Æ’ trÃ¡ÂºÂ£ { data: {...} } hoÃ¡ÂºÂ·c {...}
+      // Backend can return either { data: {...} } or {...}
       const payload = res.data?.data ?? res.data ?? {};
 
-      // BÃ¡ÂºÂ¯t token theo nhiÃ¡Â»Âu key phÃ¡Â»â€¢ biÃ¡ÂºÂ¿n (trÃƒÂ¡nh undefined)
+      // Extract token from multiple key variants to avoid undefined
       const accessToken =
         payload.accessToken ??
         payload.token ??
         payload.jwt ??
         payload.access_token ??
-        payload.accessTokenToken; // (phÃƒÂ²ng khi BE Ã„â€˜Ã¡ÂºÂ·t sai)
+        payload.accessTokenToken; // Fallback for backend typo
 
       const refreshToken =
         payload.refreshToken ?? payload.refresh_token ?? payload.refresh ?? null;
@@ -91,7 +91,7 @@ const Login = () => {
       localStorage.setItem('token', accessToken);
       if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
 
-      // LÃ†Â°u user nÃ¡ÂºÂ¿u cÃƒÂ³, cÃƒÂ²n khÃƒÂ´ng thÃƒÂ¬ vÃ¡ÂºÂ«n lÃ†Â°u email cho UI
+      // Save user if present; otherwise still keep email for UI state
       const userObj =
         payload.user ??
         {
@@ -165,7 +165,7 @@ const Login = () => {
       toast('Login successful! Redirecting...', { type: 'success' });
       navigate('/');
     } catch (error) {
-      // NÃ¡ÂºÂ¿u lÃƒÂ  lÃ¡Â»â€”i tÃ¡Â»Â± throw "Missing access token..." thÃƒÂ¬ show thÃƒÂ¢n thiÃ¡Â»â€¡n
+      // If thrown by missing token, show a friendly error message
       const msg =
         error?.message === 'Missing access token in login response'
           ? 'Login succeeded but token was not returned by backend. Please check /Auth/login response fields.'
@@ -237,7 +237,7 @@ const Login = () => {
                 id="password"
                 name="password"
                 type="password"
-                placeholder="Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢"
+                placeholder="••••••••"
                 value={formData.password}
                 onChange={(e) => {
                   handleChange(e);

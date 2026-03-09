@@ -193,10 +193,10 @@ export const useUserPlan = () => {
     }
   }, []);
 
-  const refreshFromBackend = useCallback(async () => {
+  const refreshFromBackend = useCallback(async ({ force = false } = {}) => {
     const endpointUnavailable =
       localStorage.getItem(STORAGE_KEY_PROFILE_ENDPOINT_UNAVAILABLE) === "1";
-    if (endpointUnavailable) {
+    if (endpointUnavailable && !force) {
       return {
         payload: null,
         plan: localStorage.getItem(STORAGE_KEY_PLAN) || PLAN.FREE,

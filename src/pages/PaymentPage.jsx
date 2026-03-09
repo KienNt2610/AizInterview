@@ -6,6 +6,7 @@ import { paymentAPI } from "../api/paymentApi";
 import { useUserPlan } from "../hooks/useUserPlan";
 import { useToast } from "../components/ui/Toast";
 import { PLAN } from "../utils/plan";
+import { authAPI } from "../services/api";
 
 const POLL_INTERVAL_MS = 3000;
 const POLL_TIMEOUT_MS = 90000;
@@ -109,6 +110,29 @@ const PaymentPage = () => {
     return { isPaid, isFailed };
   };
 
+  const refreshAuthToken = useCallback(async () => {
+    const refreshToken = localStorage.getItem("refreshToken");
+    if (!refreshToken) return false;
+
+    try {
+      const res = await authAPI.refresh(refreshToken);
+      const payload = res?.data?.data ?? res?.data ?? {};
+      const accessToken = payload?.accessToken;
+      const nextRefreshToken = payload?.refreshToken;
+
+      if (!accessToken) return false;
+
+      localStorage.setItem("token", accessToken);
+      if (nextRefreshToken) {
+        localStorage.setItem("refreshToken", nextRefreshToken);
+      }
+      return true;
+    } catch (error) {
+      console.warn("[PAYMENT] Failed to refresh auth token:", error?.message || error);
+      return false;
+    }
+  }, []);
+
   const startPaymentPolling = useCallback(async () => {
     setCheckingPayment(true);
     setPaymentPhase("PROCESSING");
@@ -138,7 +162,9 @@ const PaymentPage = () => {
           }
         }
 
-        const refreshed = await refreshFromBackend();
+        // Force-refresh token/profile so BE license claims are updated after payment.
+        await refreshAuthToken();
+        const refreshed = await refreshFromBackend({ force: true });
         const isPlanProNow =
           refreshed?.plan === PLAN.PRO || localStorage.getItem("userPlan") === PLAN.PRO;
 
@@ -177,7 +203,7 @@ const PaymentPage = () => {
     } finally {
       setCheckingPayment(false);
     }
-  }, [checkoutId, navigate, refreshFromBackend, toast, transCode, upgradeToPro]);
+  }, [checkoutId, navigate, refreshAuthToken, refreshFromBackend, toast, transCode, upgradeToPro]);
 
   useEffect(() => {
     if (plan === PLAN.PRO || loading || qrUrl || transCode) return;

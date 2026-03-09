@@ -17,7 +17,7 @@ import {
 } from "../components/ui/Card";
 import Button from "../components/ui/Button";
 import { useToast } from "../components/ui/Toast";
-import { jobAPI, interviewSessionAPI, aiInterviewAPI } from "../services/api";
+import { jobAPI, interviewSessionAPI, aiInterviewAPI, authAPI } from "../services/api";
 // Removed useUsageLimit - using useUserPlan instead
 // import { useUsageLimit } from "../hooks/useUsageLimit";
 import { useUserPlan } from "../hooks/useUserPlan";
@@ -35,6 +35,7 @@ const InterviewSetup = () => {
     interviewCount,
     canStartInterview,
     incrementInterviewCount,
+    refreshFromBackend,
     hasReachedLimit: hasReachedFreeLimit,
   } = useUserPlan();
 
@@ -392,6 +393,38 @@ const InterviewSetup = () => {
       
       // Handle specific error codes
       if (errorCode === "LICENSE_INVALID" || errorMessage?.toLowerCase().includes("license")) {
+        let syncedToPro = false;
+
+        try {
+          const refreshToken = localStorage.getItem("refreshToken");
+          if (refreshToken) {
+            const refreshedTokenRes = await authAPI.refresh(refreshToken);
+            const tokenPayload =
+              refreshedTokenRes?.data?.data ?? refreshedTokenRes?.data ?? {};
+            if (tokenPayload?.accessToken) {
+              localStorage.setItem("token", tokenPayload.accessToken);
+            }
+            if (tokenPayload?.refreshToken) {
+              localStorage.setItem("refreshToken", tokenPayload.refreshToken);
+            }
+          }
+
+          const refreshedPlan = await refreshFromBackend({ force: true });
+          syncedToPro =
+            refreshedPlan?.plan === "PRO" || localStorage.getItem("userPlan") === "PRO";
+        } catch (syncErr) {
+          console.warn("[InterviewSetup] Failed to sync license before fallback:", syncErr);
+        }
+
+        if (syncedToPro && !isRetry) {
+          toast("Đã đồng bộ license PRO. Đang thử tạo lại phiên phỏng vấn...", {
+            type: "info",
+          });
+          setLoading(false);
+          await handleStartInterview(true);
+          return;
+        }
+
         const isFirstFreeAttempt = plan === "FREE" && interviewCount < 1;
 
         if (isFirstFreeAttempt) {
