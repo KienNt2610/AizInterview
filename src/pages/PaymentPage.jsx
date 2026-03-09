@@ -9,6 +9,11 @@ import { PLAN } from "../utils/plan";
 
 const POLL_INTERVAL_MS = 3000;
 const POLL_TIMEOUT_MS = 90000;
+const PAYMENT_BANK = "MBBank";
+const PAYMENT_ACCOUNT = "2913069999";
+
+const buildSepayQrUrl = ({ amount, transCode }) =>
+  `https://qr.sepay.vn/img?bank=${encodeURIComponent(PAYMENT_BANK)}&acc=${encodeURIComponent(PAYMENT_ACCOUNT)}&template=template&amount=${encodeURIComponent(String(amount))}&des=${encodeURIComponent(transCode)}`;
 
 const PaymentPage = () => {
   const location = useLocation();
@@ -61,13 +66,20 @@ const PaymentPage = () => {
         payload.transactionId ??
         null;
 
-      setQrUrl(nextQrUrl || null);
+      const normalizedTransCode =
+        typeof nextTransCode === "string"
+          ? nextTransCode
+          : nextTransCode != null
+          ? String(nextTransCode)
+          : "";
+
+      const clientQrUrl = normalizedTransCode
+        ? buildSepayQrUrl({ amount: packageAmount, transCode: normalizedTransCode })
+        : null;
+
+      setQrUrl(clientQrUrl || nextQrUrl || null);
       setCheckoutId(nextCheckoutId);
-      if (typeof nextTransCode === "string") {
-        setTransCode(nextTransCode);
-      } else if (nextTransCode != null) {
-        setTransCode(String(nextTransCode));
-      }
+      setTransCode(normalizedTransCode);
     } catch (error) {
       console.error("Failed to create payment checkout:", error);
       if (error.response) {
