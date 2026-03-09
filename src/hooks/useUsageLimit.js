@@ -1,60 +1,58 @@
-import { useState, useEffect, useCallback } from "react";
+import { useMemo } from "react";
+import { useUserPlan } from "./useUserPlan";
+import { PLAN } from "../utils/plan";
 
 export const useUsageLimit = () => {
-  const [usage, setUsage] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [hasReachedLimit, setHasReachedLimit] = useState(false);
+  const {
+    plan,
+    interviewCount,
+    loading,
+    hasReachedLimit,
+    getRemainingInterviews: getRemainingFromPlan,
+    refreshFromBackend,
+  } =
+    useUserPlan();
 
-  const fetchUsage = useCallback(async () => {
-    try {
-      setLoading(true);
-
-      // TODO: Replace with real API when backend provides it
-      // const response = await paymentAPI.getUsage();
-      // const data = response.data?.data ?? response.data;
-
-      const mockUsage = {
-        used: 7,
-        total: 10,
-        resetDate: "2026-02-01",
+  const usage = useMemo(() => {
+    if (plan === PLAN.PRO) {
+      return {
+        used: interviewCount,
+        total: null,
+        resetDate: null,
       };
-
-      setUsage(mockUsage);
-      setHasReachedLimit(mockUsage.used >= mockUsage.total);
-    } catch (error) {
-      console.error("Failed to fetch usage:", error);
-    } finally {
-      setLoading(false);
     }
-  }, []);
 
-  useEffect(() => {
-    fetchUsage();
-  }, [fetchUsage]);
+    const remaining = getRemainingFromPlan();
+
+    return {
+      used: interviewCount,
+      total: remaining == null ? null : interviewCount + remaining,
+      resetDate: null,
+    };
+  }, [getRemainingFromPlan, interviewCount, plan]);
 
   const checkLimit = () => {
-    if (!usage) return false;
-    return usage.used >= usage.total;
+    return hasReachedLimit();
   };
 
   const getRemainingInterviews = () => {
-    if (!usage) return 0;
-    return Math.max(0, usage.total - usage.used);
+    const remaining = usage?.total == null ? null : Math.max(0, usage.total - usage.used);
+    return remaining ?? 0;
   };
 
   const getUsagePercentage = () => {
-    if (!usage || usage.total === 0) return 0;
+    if (!usage || usage.total == null || usage.total === 0) return 0;
     return (usage.used / usage.total) * 100;
   };
 
   const refreshUsage = () => {
-    fetchUsage();
+    void refreshFromBackend();
   };
 
   return {
     usage,
     loading,
-    hasReachedLimit,
+    hasReachedLimit: hasReachedLimit(),
     checkLimit,
     getRemainingInterviews,
     getUsagePercentage,

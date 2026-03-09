@@ -57,10 +57,12 @@ const Dashboard = () => {
       return s.includes("complete") || s.includes("end") || s === "done";
     }).length;
 
+    const remaining = getRemainingInterviews();
+
     return {
       totalInterviews: total,
       completedInterviews: completed,
-      remainingQuota: plan === "PRO" ? "∞" : getRemainingInterviews(),
+      remainingQuota: plan === "PRO" ? "∞" : remaining ?? "-",
     };
   }, [getRemainingInterviews, plan, recentInterviews]);
 
@@ -115,7 +117,10 @@ const Dashboard = () => {
         </Card>
       )}
 
-      {plan === "FREE" && !hasReachedLimit() && getRemainingInterviews() <= 1 && (
+      {plan === "FREE" &&
+        !hasReachedLimit() &&
+        getRemainingInterviews() !== null &&
+        getRemainingInterviews() <= 1 && (
         <Card className="border-2 border-yellow-500/30 bg-gradient-to-r from-yellow-900/40 to-yellow-800/30 backdrop-blur-sm">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">

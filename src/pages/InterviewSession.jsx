@@ -142,7 +142,9 @@ const InterviewSession = () => {
 
   const [turnIdToAnswerIdMap, setTurnIdToAnswerIdMap] = useState(new Map()); 
   const isLocalDemoSession =
-    String(sessionId || "").startsWith("demo-") || Boolean(interviewContext?.isLocalDemo);
+    String(sessionId || "").startsWith("demo-") ||
+    String(sessionId || "").startsWith("freetrial-") ||
+    Boolean(interviewContext?.isLocalDemo);
   
   // Audio recording refs
   const mediaRecorderRef = useRef(null);
@@ -911,7 +913,9 @@ const InterviewSession = () => {
       turnIndex: turnState.turnIndex,
     };
     const useLocalDemoMode =
-      String(sessionId || "").startsWith("demo-") || Boolean(interviewContext?.isLocalDemo);
+      String(sessionId || "").startsWith("demo-") ||
+      String(sessionId || "").startsWith("freetrial-") ||
+      Boolean(interviewContext?.isLocalDemo);
     
     // Verify askedIds includes currentQuestion.id (guard)
     const currentQuestionIdStr = String(stateSnapshot.currentQuestion.id);

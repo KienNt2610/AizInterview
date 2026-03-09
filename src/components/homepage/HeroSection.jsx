@@ -7,7 +7,7 @@ import { useUserPlan } from '../../hooks/useUserPlan';
 const HeroSection = () => {
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const { plan, interviewCount, getRemainingInterviews } = useUserPlan();
+  const { plan, getRemainingInterviews, hasReachedLimit } = useUserPlan();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -71,11 +71,19 @@ const HeroSection = () => {
           <div className="mb-12">
             {plan === "FREE" ? (
               <p className="text-lg text-[#66FCF1] font-medium">
-                Bạn còn {getRemainingInterviews()}/1 lượt phỏng vấn miễn phí.
+                {hasReachedLimit()
+                  ? "Bạn đã dùng hết lượt phỏng vấn miễn phí."
+                  : getRemainingInterviews() === null
+                  ? "License free trial đang được đồng bộ từ hệ thống."
+                  : `Bạn còn ${getRemainingInterviews()} lượt phỏng vấn miễn phí.`}
+              </p>
+            ) : plan === "PRO" ? (
+              <p className="text-lg text-[#66FCF1] font-medium">
+                PRO — phỏng vấn không giới hạn
               </p>
             ) : (
               <p className="text-lg text-[#66FCF1] font-medium">
-                PRO — phỏng vấn không giới hạn
+                Đang đồng bộ license...
               </p>
             )}
           </div>

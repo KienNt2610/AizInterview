@@ -12,7 +12,7 @@ const UpgradeModal = ({ isOpen, onClose }) => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Đã hết lượt phỏng vấn miễn phí">
+    <Modal isOpen={isOpen} onClose={onClose} title="License inactive or expired">
       <div className="space-y-4">
         <div className="flex items-start gap-4">
           <div className="bg-red-900/30 p-3 rounded-full flex-shrink-0">
@@ -20,7 +20,8 @@ const UpgradeModal = ({ isOpen, onClose }) => {
           </div>
           <div className="flex-1">
             <p className="text-[#C5C6C7] text-base leading-relaxed">
-              Bạn đã sử dụng hết 1 lượt phỏng vấn miễn phí. Vui lòng nâng cấp gói PRO để mở khóa phỏng vấn không giới hạn.
+              You cannot start a new interview because the backend returned LICENSE_INVALID.
+              Please complete payment and retry starting interview.
             </p>
           </div>
         </div>
@@ -32,10 +33,10 @@ const UpgradeModal = ({ isOpen, onClose }) => {
             className="flex items-center justify-center gap-2"
           >
             <CreditCard className="w-5 h-5" />
-            Nâng cấp gói PRO
+            Upgrade to PRO
           </Button>
           <Button variant="outline" onClick={onClose}>
-            Đóng
+            Close
           </Button>
         </div>
       </div>

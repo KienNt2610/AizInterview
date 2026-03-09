@@ -33,30 +33,14 @@ export const authAPI = {
   },
 
   logout: () => {
-    // Save email before removing user data (to preserve plan data for same email on next login)
-    const userStr = localStorage.getItem("user");
-    let userEmail = null;
-    try {
-      if (userStr) {
-        const user = JSON.parse(userStr);
-        userEmail = user?.email;
-      }
-    } catch {
-      // Ignore parse errors
-    }
-    
     localStorage.removeItem("token");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
-    
-    // Keep plan data and email to preserve interviewCount for same email on next login
-    // Only clear if we don't have email to preserve
-    if (!userEmail) {
-      localStorage.removeItem("userPlan");
-      localStorage.removeItem("interviewCount");
-      localStorage.removeItem("userPlanEmail");
-    }
-    // If we have email, keep userPlanEmail so we can check on next login
+    localStorage.removeItem("userPlan");
+    localStorage.removeItem("interviewCount");
+    localStorage.removeItem("interviewLimit");
+    localStorage.removeItem("profileEndpointUnavailable");
+    localStorage.removeItem("licenseEndpointUnavailable");
     
     // Dispatch event to notify components
     window.dispatchEvent(new Event('auth-change'));
@@ -142,34 +126,9 @@ export const aiInterviewAPI = {
 /** ===== USER ===== */
 export const userAPI = {
   getCurrentProfile: async () => {
-    const candidateEndpoints = [
-      "/User/me",
-      "/User/profile",
-      "/User/current",
-      "/Auth/me",
-    ];
-
-    let lastError = null;
-
-    for (const endpoint of candidateEndpoints) {
-      try {
-        return await api.get(endpoint);
-      } catch (error) {
-        lastError = error;
-        const status = error?.response?.status;
-        if (status === 404) continue;
-        throw error;
-      }
-    }
-
-    if (lastError?.response?.status === 404) {
-      const endpointError = new Error("PROFILE_ENDPOINT_NOT_FOUND");
-      endpointError.code = "PROFILE_ENDPOINT_NOT_FOUND";
-      throw endpointError;
-    }
-
-    if (lastError) throw lastError;
-    throw new Error("No profile endpoint available");
+    const endpointError = new Error("PROFILE_ENDPOINT_UNAVAILABLE");
+    endpointError.code = "PROFILE_ENDPOINT_UNAVAILABLE";
+    throw endpointError;
   },
   updateProfile: (dto) => api.put("/User/update-profile", dto),
   changePassword: (dto) => api.put("/User/change-password", dto),

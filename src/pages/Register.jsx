@@ -63,11 +63,88 @@ const Register = () => {
       if (all.length) return all.join(', ');
     }
 
+    // API wrapper style: { data: null, error: { code, message }, isSuccess: false }
+    if (data?.error?.message) return data.error.message;
+    if (data?.error?.code) return data.error.code;
+
     // Some APIs return { message: "..." } or plain string
     if (typeof data === 'string' && data.trim()) return data;
     if (data?.message) return data.message;
 
     return 'Registration failed. Please try again.';
+  };
+
+  const getRegisterFailureMessage = (responseBody) => {
+    if (!responseBody || typeof responseBody !== 'object') {
+      return null;
+    }
+
+    const wrapperError = responseBody?.error;
+    if (typeof wrapperError === 'string' && wrapperError.trim()) return wrapperError;
+    if (wrapperError?.message) return wrapperError.message;
+    if (wrapperError?.code) return wrapperError.code;
+    if (responseBody?.message) return responseBody.message;
+
+    return null;
+  };
+
+  const isNameFieldMismatchError = (error) => {
+    const data = error?.response?.data;
+    const errors = data?.errors;
+    const message = String(
+      getRegisterFailureMessage(data) ||
+        error?.message ||
+        "",
+    ).toLowerCase();
+
+    const byMessage =
+      message.includes("fullname") ||
+      message.includes("full name") ||
+      message.includes("username") ||
+      message.includes("user name") ||
+      message.includes("name");
+
+    if (!errors || typeof errors !== 'object') {
+      return byMessage;
+    }
+
+    const keys = Object.keys(errors).map((k) => String(k).toLowerCase());
+    return (
+      keys.some((k) =>
+        k.includes("fullname") || k.includes("full name") || k.includes("username") || k === "name",
+      ) || byMessage
+    );
+  };
+
+  const registerWithFallbackPayloads = async (normalizedInput) => {
+    const basePayload = {
+      email: normalizedInput.email,
+      password: normalizedInput.password,
+      confirmPassword: normalizedInput.confirmPassword,
+    };
+
+    const candidatePayloads = [
+      { ...basePayload, fullName: normalizedInput.fullName },
+      { ...basePayload, name: normalizedInput.fullName },
+      { ...basePayload, userName: normalizedInput.fullName },
+    ];
+
+    let lastError = null;
+
+    for (let i = 0; i < candidatePayloads.length; i += 1) {
+      try {
+        return await authAPI.register(candidatePayloads[i]);
+      } catch (error) {
+        lastError = error;
+        const status = error?.response?.status;
+        if (status !== 400) throw error;
+
+        const shouldTryNext = i < candidatePayloads.length - 1 && isNameFieldMismatchError(error);
+        if (!shouldTryNext) throw error;
+      }
+    }
+
+    throw lastError || new Error("Registration failed.");
   };
 
   const handleSubmit = async (e) => {
@@ -81,33 +158,36 @@ const Register = () => {
     setLoading(true);
 
     try {
-      // Map frontend -> backend DTO
-      const payload = {
-        email: formData.email,
+      const normalizedInput = {
+        email: formData.email.trim().toLowerCase(),
         password: formData.password,
         confirmPassword: formData.confirmPassword,
-        fullName: formData.name,
+        fullName: formData.name.trim(),
       };
 
-      await authAPI.register(payload);
+      const res = await registerWithFallbackPayloads(normalizedInput);
+      const responseBody = res?.data ?? {};
+      const isSuccess = responseBody?.isSuccess;
 
-      // Note: BE automatically grants demo license (1 free interview) to new users
-      // Frontend manages license state locally with email check to prevent duplicate grants
-      
-      // Clear any old plan data from localStorage (fresh start for new user)
-      // Set default plan for new user (FREE with 0 interviews = 1 free interview remaining)
+      // Some BE implementations return 200 with { isSuccess: false, error: ... }.
+      // Treat that as a failure and do not navigate to login.
+      if (isSuccess === false) {
+        const backendMessage =
+          getRegisterFailureMessage(responseBody) || 'Registration failed. Account was not created.';
+        throw new Error(backendMessage);
+      }
+
+      // License is now fully managed by backend on account creation.
+      // Clear cached plan/usage so next login always syncs from backend.
       localStorage.removeItem("userPlan");
       localStorage.removeItem("interviewCount");
-      localStorage.removeItem("userPlanEmail");
-      localStorage.setItem("userPlan", "FREE");
-      localStorage.setItem("interviewCount", "0");
-      // Note: email will be stored when user logs in
+      localStorage.removeItem("interviewLimit");
 
       toast('Registration successful! Redirecting to login...', { type: 'success' });
       navigate('/login');
     } catch (error) {
       console.error('Register error:', error);
-      toast(getBackendErrorMessage(error), { type: 'error' });
+      toast(error?.message || getBackendErrorMessage(error), { type: 'error' });
     } finally {
       setLoading(false);
     }

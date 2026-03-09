@@ -103,62 +103,14 @@ const Login = () => {
       localStorage.setItem('user', JSON.stringify(userObj));
       const resolvedPlanFromLogin = resolvePlanFromData(payload) || resolvePlanFromData(userObj);
 
-      // Check stored email to determine if this is a different user
-      // Use storedEmail (userPlanEmail) as the source of truth, not oldUser
-      // because oldUser is cleared on logout but plan data is preserved
-      const storedEmail = localStorage.getItem("userPlanEmail");
-      const isDifferentEmail = !storedEmail || storedEmail !== userObj.email;
-      
-      // If no stored email OR different email, initialize FREE license (similar to demo license)
-      // Note: BE automatically grants demo license (1 free interview) to new users
-      // Frontend manages license state locally with email check to prevent duplicate grants
-      if (isDifferentEmail) {
-        console.log("[Login] New/different user detected:", userObj.email, "- Initializing FREE license with 0 interviews (1 free trial)");
-        console.log("[Login] Stored email:", storedEmail, "New email:", userObj.email);
-        console.log("[Login] BE automatically grants demo license to new users, frontend tracks usage locally");
-        
-        localStorage.removeItem("userPlan");
-        localStorage.removeItem("interviewCount");
-        const targetPlan = resolvedPlanFromLogin || PLAN.FREE;
-        localStorage.setItem("userPlan", targetPlan);
-        localStorage.setItem("interviewCount", "0");
-        localStorage.setItem("userPlanEmail", userObj.email);
+      // License state is backend-driven.
+      // Frontend only stores plan as a cache if backend already returned one in login payload.
+      if (resolvedPlanFromLogin === PLAN.PRO || resolvedPlanFromLogin === PLAN.FREE) {
+        localStorage.setItem("userPlan", resolvedPlanFromLogin);
       } else {
-        // Existing user with same email - keep their plan data
-        const storedPlan = localStorage.getItem("userPlan");
-
-        if (resolvedPlanFromLogin === PLAN.PRO || storedPlan === PLAN.PRO) {
-          // PRO users keep their status
-          console.log("[Login] Existing PRO user with same email, keeping plan");
-          localStorage.setItem("userPlan", PLAN.PRO);
-          const storedCount = localStorage.getItem("interviewCount");
-          const count = storedCount ? parseInt(storedCount, 10) : 0;
-          if (isNaN(count) || count < 0) {
-            localStorage.setItem("interviewCount", "0");
-          }
-          // Ensure email is stored
-          localStorage.setItem("userPlanEmail", userObj.email);
-        } else {
-          // FREE users with same email: keep current state (don't reset)
-          // If they've used up their free interview (count = 1), keep it to block them
-          console.log("[Login] Existing FREE user with same email, keeping current state");
-          console.log("[Login] Stored email:", storedEmail, "Current email:", userObj.email, "- Keeping interviewCount");
-          // Ensure email is stored
-          localStorage.setItem("userPlanEmail", userObj.email);
-          // Validate count: only reset if invalid (negative or > 1)
-          // If count === 1, that's valid - user has used up their free interview
-          const storedCount = localStorage.getItem("interviewCount");
-          const count = storedCount ? parseInt(storedCount, 10) : 0;
-          console.log("[Login] Current interviewCount from localStorage:", storedCount, "parsed as:", count);
-          if (isNaN(count) || count < 0 || count > 1) {
-            console.log("[Login] Invalid interviewCount:", count, "resetting to 0");
-            localStorage.setItem("interviewCount", "0");
-          } else {
-            const statusMsg = count === 0 ? "1 free interview remaining" : "used up their free interview";
-            console.log("[Login] Valid interviewCount:", count, "- Keeping it (user has", statusMsg + ")");
-          }
-        }
+        localStorage.removeItem("userPlan");
       }
+      localStorage.removeItem("interviewCount");
 
       window.dispatchEvent(new Event('auth-change'));
 
